@@ -1,13 +1,21 @@
 // 🔥 FIREBASE IMPORTS (MODULAR v9)
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+import {
+  getFirestore,
+  doc,
+  getDoc,
+  setDoc,
+  updateDoc,
+  onSnapshot,
+  increment
+} from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
 // 🔥 FIREBASE CONFIG
 const firebaseConfig = {
   apiKey: "AIzaSyCfVDdwgkMkhdd-1TIQJbd3M_UWvNZQw8k",
   authDomain: "score-dashboard-304f0.firebaseapp.com",
   projectId: "score-dashboard-304f0",
-  storageBucket: "score-dashboard-304f0.firebasestorage.app",
+  storageBucket: "score-dashboard-304f0.appspot.com",
   messagingSenderId: "405203630122",
   appId: "1:405203630122:web:5521fd42b703af4e5e2b53"
 };
@@ -16,14 +24,14 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// USERS
+// USERS (LOCAL AUTH)
 const users = {
-  ERON: { password: "0022", score: 0 },
-  LAWIN: { password: "0023", score: 0 }
+  ERON: "0022",
+  LAWIN: "0023"
 };
 
 let currentUser = "";
-let saving = false; // 🔴 IMPORTANT FLAG
+let busy = false; // ⛔ stop double tap
 
 // LOGIN
 document.getElementById("loginBtn").addEventListener("click", login);
@@ -32,7 +40,7 @@ function login() {
   const u = document.getElementById("username").value.toUpperCase();
   const p = document.getElementById("password").value;
 
-  if (users[u] && users[u].password === p) {
+  if (users[u] && users[u] === p) {
     currentUser = u;
     loadDashboard();
   } else {
@@ -45,78 +53,66 @@ function loadDashboard() {
   document.body.innerHTML = `
     <div class="dashboard">
       <h2>Welcome ${currentUser}</h2>
-      ${createCard("ERON")}
-      ${createCard("LAWIN")}
+      ${card("ERON")}
+      ${card("LAWIN")}
     </div>
   `;
-  loadScores();
+
+  listenScore("ERON");
+  listenScore("LAWIN");
 }
 
-// CARD
-function createCard(user) {
-  let controls = "";
-
-  if (user === currentUser) {
-    controls = `
-      <div class="controls">
-        <button class="plus" onclick="updateScore('${user}',1)">+</button>
-        <button class="minus" onclick="updateScore('${user}',-1)">−</button>
-      </div>
-    `;
-  }
+// USER CARD
+function card(user) {
+  const controls =
+    user === currentUser
+      ? `
+    <div class="controls">
+      <button class="plus" id="plus-${user}" type="button">+</button>
+      <button class="minus" id="minus-${user}" type="button">−</button>
+    </div>`
+      : "";
 
   return `
     <div class="user-card">
-      <h3>${user}</h3>
+      <div class="user-name">${user}</div>
       <div class="score" id="score-${user}">0</div>
       ${controls}
     </div>
   `;
 }
 
-// LOAD SCORES
-async function loadScores() {
-  for (let user of ["ERON", "LAWIN"]) {
-    const ref = doc(db, "scores", user);
-    const snap = await getDoc(ref);
+// REALTIME LISTENER
+function listenScore(user) {
+  const ref = doc(db, "scores", user);
 
+  onSnapshot(ref, snap => {
     if (snap.exists()) {
-      users[user].score = snap.data().value;
-      document.getElementById(`score-${user}`).innerText = users[user].score;
+      document.getElementById(`score-${user}`).innerText = snap.data().value;
     }
+  });
+
+  if (user === currentUser) {
+    document.getElementById(`plus-${user}`).onclick = () => change(user, 1);
+    document.getElementById(`minus-${user}`).onclick = () => change(user, -1);
   }
 }
 
-// 🔥 UPDATE SCORE (MOBILE + GITHUB SAFE)
-window.updateScore = async function (user, change) {
-  if (user !== currentUser) return;
-  if (saving) return; // stop double tap
-
-  const newScore = users[user].score + change;
-  if (newScore < 0) return;
-
-  saving = true;
-
-  // disable all buttons
-  document.querySelectorAll("button").forEach(b => b.disabled = true);
+// UPDATE SCORE (SAFE)
+async function change(user, val) {
+  if (busy) return;
+  busy = true;
 
   try {
-    // 🔥 WAIT UNTIL FIRESTORE CONFIRMS SAVE
-    await setDoc(doc(db, "scores", user), {
-      value: newScore
+    await updateDoc(doc(db, "scores", user), {
+      value: increment(val)
     });
-
-    // update UI AFTER save
-    users[user].score = newScore;
-    document.getElementById(`score-${user}`).innerText = newScore;
-
-  } catch (error) {
-    alert("Save failed. Check internet connection.");
+  } catch {
+    alert("Connection problem");
   }
 
-  // enable buttons
-  document.querySelectorAll("button").forEach(b => b.disabled = false);
-  saving = false;
-};
+  busy = false;
+}
+
 
 

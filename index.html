@@ -1,24 +1,38 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Score Dashboard</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Score Dashboard</title>
+<link rel="stylesheet" href="style.css">
 </head>
+
 <body>
 
-<div class="login-container" id="loginBox">
-  <h1>Score System</h1>
-  <input type="text" id="username" placeholder="Username">
-  <input type="password" id="password" placeholder="Password">
-  <button id="loginBtn">Login</button>
-  <p id="error"></p>
+<div class="dashboard">
+    <h2 id="welcome">Welcome</h2>
+
+    <!-- ERON -->
+    <div class="user-card">
+        <div class="user-name">ERON</div>
+        <div class="score" id="eronScore">0</div>
+        <div class="controls">
+            <button type="button" class="plus" id="eronPlus">+</button>
+            <button type="button" class="minus" id="eronMinus">−</button>
+        </div>
+    </div>
+
+    <!-- LAWIN -->
+    <div class="user-card">
+        <div class="user-name">LAWIN</div>
+        <div class="score" id="lawinScore">0</div>
+    </div>
 </div>
 
 <script type="module" src="script.js"></script>
 </body>
 </html>
+
 
 
 

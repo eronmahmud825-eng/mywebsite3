@@ -12,7 +12,6 @@ body {
     justify-content: center;
 }
 
-
 /* LOGIN */
 
 .login-container {
@@ -51,7 +50,6 @@ body {
     color: red;
     margin-top: 10px;
 }
-
 
 /* DASHBOARD */
 
@@ -101,4 +99,10 @@ body {
 
 .minus {
     background: #dc3545;
+}
+
+/* 🔥 VERY IMPORTANT MOBILE FIX 🔥 */
+/* Prevent double-tap / fast refresh bug */
+button {
+    touch-action: manipulation;
 }

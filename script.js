@@ -1,61 +1,114 @@
+// 🔥 FIREBASE IMPORTS (MODULAR)
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+
+// 🔥 YOUR FIREBASE CONFIG
+const firebaseConfig = {
+  apiKey: "AIzaSyCfVDdwgkMkhdd-1TIQJbd3M_UWvNZQw8k",
+  authDomain: "score-dashboard-304f0.firebaseapp.com",
+  projectId: "score-dashboard-304f0",
+  storageBucket: "score-dashboard-304f0.firebasestorage.app",
+  messagingSenderId: "405203630122",
+  appId: "1:405203630122:web:5521fd42b703af4e5e2b53"
+};
+
+// 🔥 INIT FIREBASE
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+// USERS
 const users = {
-    ERON: { password: "0022", score: 0 },
-    LAWIN: { password: "0023", score: 0 }
+  ERON: { password: "0022", score: 0 },
+  LAWIN: { password: "0023", score: 0 }
 };
 
 let currentUser = "";
 
 // LOGIN
-function login() {
-    const u = document.getElementById("username").value.toUpperCase();
-    const p = document.getElementById("password").value;
+document.getElementById("loginBtn").addEventListener("click", login);
 
-    if (users[u] && users[u].password === p) {
-        currentUser = u;
-        loadDashboard();
-    } else {
-        document.getElementById("error").innerText = "Invalid login!";
-    }
+function login() {
+  const u = document.getElementById("username").value.toUpperCase();
+  const p = document.getElementById("password").value;
+
+  if (users[u] && users[u].password === p) {
+    currentUser = u;
+    loadDashboard();
+  } else {
+    document.getElementById("error").innerText = "Wrong login";
+  }
 }
 
 // DASHBOARD
 function loadDashboard() {
-    document.body.innerHTML = `
+  document.body.innerHTML = `
     <div class="dashboard">
       <h2>Welcome ${currentUser}</h2>
       ${createCard("ERON")}
       ${createCard("LAWIN")}
     </div>
   `;
+  loadScores();
 }
 
-// USER CARD
+// CARD
 function createCard(user) {
-    let controls = "";
+  let controls = "";
 
-    if (user === currentUser) {
-        controls = `
+  if (user === currentUser) {
+    controls = `
       <div class="controls">
         <button class="plus" onclick="updateScore('${user}',1)">+</button>
         <button class="minus" onclick="updateScore('${user}',-1)">−</button>
       </div>
     `;
-    }
+  }
 
-    return `
+  return `
     <div class="user-card">
-      <div class="user-name">${user}</div>
-      <div class="score" id="score-${user}">${users[user].score}</div>
+      <h3>${user}</h3>
+      <div class="score" id="score-${user}">0</div>
       ${controls}
     </div>
   `;
 }
 
-// SCORE UPDATE
-function updateScore(user, value) {
-    if (user === currentUser) {
-        users[user].score += value;
-        if (users[user].score < 0) users[user].score = 0;
-        document.getElementById(`score-${user}`).innerText = users[user].score;
+// LOAD SCORES
+async function loadScores() {
+  for (let user of ["ERON", "LAWIN"]) {
+    const ref = doc(db, "scores", user);
+    const snap = await getDoc(ref);
+
+    if (snap.exists()) {
+      users[user].score = snap.data().value;
+      document.getElementById(`score-${user}`).innerText = users[user].score;
     }
+  }
 }
+
+// UPDATE SCORE (MOBILE SAFE)
+window.updateScore = async function (user, change) {
+  if (user !== currentUser) return;
+
+  const newScore = users[user].score + change;
+  if (newScore < 0) return;
+
+  // disable buttons
+  document.querySelectorAll("button").forEach(b => b.disabled = true);
+
+  try {
+    // wait until Firestore saves
+    await setDoc(doc(db, "scores", user), {
+      value: newScore
+    });
+
+    users[user].score = newScore;
+    document.getElementById(`score-${user}`).innerText = newScore;
+
+  } catch (e) {
+    alert("Save failed. Check internet.");
+  }
+
+  // enable buttons
+  document.querySelectorAll("button").forEach(b => b.disabled = false);
+};

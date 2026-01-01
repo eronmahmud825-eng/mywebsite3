@@ -1,8 +1,8 @@
-// 🔥 FIREBASE IMPORTS (MODULAR)
+// 🔥 FIREBASE IMPORTS (MODULAR v9)
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
 import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
-// 🔥 YOUR FIREBASE CONFIG
+// 🔥 FIREBASE CONFIG
 const firebaseConfig = {
   apiKey: "AIzaSyCfVDdwgkMkhdd-1TIQJbd3M_UWvNZQw8k",
   authDomain: "score-dashboard-304f0.firebaseapp.com",
@@ -23,6 +23,7 @@ const users = {
 };
 
 let currentUser = "";
+let saving = false; // 🔴 IMPORTANT FLAG
 
 // LOGIN
 document.getElementById("loginBtn").addEventListener("click", login);
@@ -86,29 +87,36 @@ async function loadScores() {
   }
 }
 
-// UPDATE SCORE (MOBILE SAFE)
+// 🔥 UPDATE SCORE (MOBILE + GITHUB SAFE)
 window.updateScore = async function (user, change) {
   if (user !== currentUser) return;
+  if (saving) return; // stop double tap
 
   const newScore = users[user].score + change;
   if (newScore < 0) return;
 
-  // disable buttons
+  saving = true;
+
+  // disable all buttons
   document.querySelectorAll("button").forEach(b => b.disabled = true);
 
   try {
-    // wait until Firestore saves
+    // 🔥 WAIT UNTIL FIRESTORE CONFIRMS SAVE
     await setDoc(doc(db, "scores", user), {
       value: newScore
     });
 
+    // update UI AFTER save
     users[user].score = newScore;
     document.getElementById(`score-${user}`).innerText = newScore;
 
-  } catch (e) {
-    alert("Save failed. Check internet.");
+  } catch (error) {
+    alert("Save failed. Check internet connection.");
   }
 
   // enable buttons
   document.querySelectorAll("button").forEach(b => b.disabled = false);
+  saving = false;
 };
+
+

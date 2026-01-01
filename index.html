@@ -1,26 +1,23 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-    <meta charset="UTF-8">
-    <title>Login</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <title>Score Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="style.css">
 </head>
-
 <body>
 
-    <div class="login-container">
-        <h1>Score System</h1>
+<div class="login-container" id="loginBox">
+  <h1>Score System</h1>
 
-        <input type="text" id="username" placeholder="Username">
-        <input type="password" id="password" placeholder="Password">
+  <input type="text" id="username" placeholder="Username">
+  <input type="password" id="password" placeholder="Password">
 
-        <button onclick="login()">Login</button>
-        <p id="error"></p>
-    </div>
+  <button id="loginBtn">Login</button>
+  <p id="error"></p>
+</div>
 
-    <script src="script.js"></script>
+<script type="module" src="script.js"></script>
 </body>
-
 </html>

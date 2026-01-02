@@ -1,37 +1,216 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Score Dashboard</title>
-<link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <title>Score Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: "Segoe UI", sans-serif;
+        }
+        
+        body {
+            margin: 0;
+            background: linear-gradient(135deg, #0d6efd, #6610f2);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .login-container {
+            background: white;
+            width: 90%;
+            max-width: 350px;
+            padding: 25px;
+            border-radius: 15px;
+            text-align: center;
+        }
+        
+        button {
+            width: 100%;
+            padding: 15px;
+            margin-top: 15px;
+            font-size: 18px;
+            border: none;
+            border-radius: 10px;
+            background: #0d6efd;
+            color: white;
+            cursor: pointer;
+        }
+        
+        .dashboard {
+            width: 100%;
+            padding: 15px;
+        }
+        
+        .dashboard h2 {
+            color: white;
+            text-align: center;
+        }
+        
+        .user-card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        
+        .score {
+            font-size: 48px;
+            font-weight: bold;
+            margin: 15px 0;
+        }
+        
+        .controls button {
+            width: 60px;
+            height: 60px;
+            font-size: 28px;
+            margin: 5px;
+            border-radius: 50%;
+        }
+        
+        .plus {
+            background: #198754;
+        }
+        
+        .minus {
+            background: #dc3545;
+        }
+    </style>
 </head>
 
 <body>
 
-<div class="dashboard">
-    <h2 id="welcome">Welcome</h2>
-
-    <!-- ERON -->
-    <div class="user-card">
-        <div class="user-name">ERON</div>
-        <div class="score" id="eronScore">0</div>
-        <div class="controls">
-            <button type="button" class="plus" id="eronPlus">+</button>
-            <button type="button" class="minus" id="eronMinus">−</button>
-        </div>
+    <div class="login-container" id="app">
+        <h1>Select Account</h1>
+        <button onclick="selectUser('ERON')">ERON</button>
+        <button onclick="selectUser('LAWIN')">LAWIN</button>
     </div>
 
-    <!-- LAWIN -->
-    <div class="user-card">
-        <div class="user-name">LAWIN</div>
-        <div class="score" id="lawinScore">0</div>
-    </div>
-</div>
+    <!-- 🔥 FIREBASE v8 (STABLE) -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
 
-<script type="module" src="script.js"></script>
+    <script>
+        // 🔥 FIREBASE CONFIG
+        firebase.initializeApp({
+            apiKey: "AIzaSyCfVDdwgkMkhdd-1TIQJbd3M_UWvNZQw8k",
+            authDomain: "score-dashboard-304f0.firebaseapp.com",
+            projectId: "score-dashboard-304f0"
+        });
+
+        const db = firebase.firestore();
+
+        // PASSWORDS
+        const passwords = {
+            ERON: "0022",
+            LAWIN: "0023"
+        };
+
+        let scores = {
+            ERON: 0,
+            LAWIN: 0
+        };
+        let currentUser = "";
+
+        // SELECT USER + PASSWORD
+        function selectUser(user) {
+            const pass = prompt(`Enter password for ${user}`);
+
+            if (pass !== passwords[user]) {
+                alert("Wrong password ❌");
+                return;
+            }
+
+            openDashboard(user);
+        }
+
+        // OPEN DASHBOARD
+        function openDashboard(user) {
+            currentUser = user;
+
+            document.getElementById("app").innerHTML = `
+    <div class="dashboard">
+      <h2>${user} Dashboard</h2>
+      ${card("ERON")}
+      ${card("LAWIN")}
+    </div>
+  `;
+
+            loadScores();
+        }
+
+        // USER CARD
+        function card(name) {
+            let controls = "";
+            if (name === currentUser) {
+                controls = `
+      <div class="controls">
+        <button class="plus" onclick="changeScore('${name}',1)">+</button>
+        <button class="minus" onclick="changeScore('${name}',-1)">-</button>
+      </div>
+    `;
+            }
+
+            return `
+    <div class="user-card">
+      <h3>${name}</h3>
+      <div class="score" id="score-${name}">0</div>
+      ${controls}
+    </div>
+  `;
+        }
+
+        // LOAD FROM FIREBASE
+        function loadScores() {
+            ["ERON", "LAWIN"].forEach(user => {
+                db.collection("scores").doc(user).get().then(doc => {
+                    if (doc.exists) {
+                        scores[user] = doc.data().value;
+                    } else {
+                        scores[user] = 0;
+                        db.collection("scores").doc(user).set({
+                            value: 0
+                        });
+                    }
+                    updateScores();
+                });
+            });
+        }
+
+        // CHANGE SCORE
+        function changeScore(user, value) {
+            if (user !== currentUser) return;
+
+            scores[user] += value;
+            if (scores[user] < 0) scores[user] = 0;
+
+            db.collection("scores").doc(user).set({
+                value: scores[user]
+            });
+
+            updateScores();
+        }
+
+        // UPDATE UI
+        function updateScores() {
+            if (document.getElementById("score-ERON"))
+                document.getElementById("score-ERON").innerText = scores.ERON;
+
+            if (document.getElementById("score-LAWIN"))
+                document.getElementById("score-LAWIN").innerText = scores.LAWIN;
+        }
+    </script>
+
 </body>
+
 </html>
+
 
 
 

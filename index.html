@@ -1,178 +1,135 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-<meta charset="UTF-8">
-<title>Score Dashboard</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8">
+    <title>Website Under Construction</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<style>
-* { box-sizing: border-box; font-family: "Segoe UI", sans-serif; }
-
-body {
-  margin: 0;
-  background: linear-gradient(135deg, #0d6efd, #6610f2);
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.login-container {
-  background: white;
-  width: 90%;
-  max-width: 360px;
-  padding: 25px;
-  border-radius: 15px;
-  text-align: center;
-}
-
-button {
-  width: 100%;
-  padding: 15px;
-  margin-top: 15px;
-  font-size: 18px;
-  border: none;
-  border-radius: 10px;
-  background: #0d6efd;
-  color: white;
-  cursor: pointer;
-}
-
-.dashboard { width: 100%; padding: 15px; }
-
-.dashboard h2 { color: white; text-align: center; }
-
-.user-card {
-  background: white;
-  border-radius: 15px;
-  padding: 20px;
-  margin-bottom: 15px;
-  text-align: center;
-}
-
-.score {
-  font-size: 48px;
-  font-weight: bold;
-  margin: 15px 0;
-}
-
-.controls button {
-  width: 60px;
-  height: 60px;
-  font-size: 28px;
-  margin: 5px;
-  border-radius: 50%;
-}
-
-.plus { background: #198754; }
-.minus { background: #dc3545; }
-.view-btn { background: #6b7280; }
-</style>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: "Segoe UI", Tahoma, sans-serif;
+        }
+        
+        body {
+            margin: 0;
+            height: 100vh;
+            background: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url("https://images.unsplash.com/photo-1522202176988-66273c2fd55f");
+            background-size: cover;
+            background-position: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            text-align: center;
+        }
+        
+        .container {
+            background: rgba(0, 0, 0, 0.55);
+            padding: 40px;
+            border-radius: 15px;
+            max-width: 500px;
+            width: 90%;
+        }
+        
+        h1 {
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+        
+        p {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+        
+        .timer {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 30px;
+        }
+        
+        .box {
+            background: #0d6efd;
+            padding: 15px;
+            border-radius: 10px;
+            width: 80px;
+        }
+        
+        .box span {
+            display: block;
+            font-size: 26px;
+            font-weight: bold;
+        }
+        
+        .box small {
+            font-size: 12px;
+            opacity: 0.9;
+        }
+        
+        footer {
+            margin-top: 25px;
+            font-size: 13px;
+            opacity: 0.7;
+        }
+    </style>
 </head>
 
 <body>
 
-<div class="login-container" id="app">
-  <h1>Select Account</h1>
-  <button onclick="selectUser('ERON')">ERON</button>
-  <button onclick="selectUser('LAWIN')">LAWIN</button>
-  <button class="view-btn" onclick="viewDashboard()">VIEW DASHBOARD</button>
-</div>
+    <div class="container">
+        <h1>🚧 Website Under Construction</h1>
+        <p>We are working hard to launch our website.<br> Please check back soon!</p>
 
-<!-- FIREBASE v8 -->
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+        <div class="timer">
+            <div class="box">
+                <span id="hours">02</span>
+                <small>Hours</small>
+            </div>
+            <div class="box">
+                <span id="minutes">00</span>
+                <small>Minutes</small>
+            </div>
+            <div class="box">
+                <span id="seconds">00</span>
+                <small>Seconds</small>
+            </div>
+        </div>
 
-<script>
-firebase.initializeApp({
-  apiKey: "AIzaSyCfVDdwgkMkhdd-1TIQJbd3M_UWvNZQw8k",
-  authDomain: "score-dashboard-304f0.firebaseapp.com",
-  projectId: "score-dashboard-304f0"
-});
-
-const db = firebase.firestore();
-
-const passwords = { ERON: "0022", LAWIN: "0023" };
-let scores = { ERON: 0, LAWIN: 0 };
-let currentUser = "";
-let viewOnly = false;
-
-// SELECT USER
-function selectUser(user) {
-  const pass = prompt(`Enter password for ${user}`);
-  if (pass !== passwords[user]) {
-    alert("Wrong password ❌");
-    return;
-  }
-  viewOnly = false;
-  openDashboard(user);
-}
-
-// VIEW ONLY
-function viewDashboard() {
-  viewOnly = true;
-  currentUser = "";
-  openDashboard("");
-}
-
-// DASHBOARD
-function openDashboard(user) {
-  document.getElementById("app").innerHTML = `
-    <div class="dashboard">
-      <h2>${viewOnly ? "Score Dashboard" : user + " Dashboard"}</h2>
-      ${card("ERON")}
-      ${card("LAWIN")}
+        <footer>
+            © 2026 dashbourd WEB
+        </footer>
     </div>
-  `;
-  loadScores();
-}
 
-function card(name) {
-  let controls = "";
-  if (!viewOnly && name === currentUser) {
-    controls = `
-      <div class="controls">
-        <button class="plus" onclick="changeScore('${name}',1)">+</button>
-        <button class="minus" onclick="changeScore('${name}',-1)">-</button>
-      </div>
-    `;
-  }
-  return `
-    <div class="user-card">
-      <h3>${name}</h3>
-      <div class="score" id="score-${name}">0</div>
-      ${controls}
-    </div>
-  `;
-}
+    <script>
+        // 2 hours countdown (in seconds)
+        let timeLeft = 5 * 60 * 60;
 
-// FIREBASE LOAD
-function loadScores() {
-  ["ERON","LAWIN"].forEach(user => {
-    db.collection("scores").doc(user).get().then(doc => {
-      if (doc.exists) scores[user] = doc.data().value;
-      else db.collection("scores").doc(user).set({ value: 0 });
-      updateScores();
-    });
-  });
-}
 
-// CHANGE SCORE
-function changeScore(user, value) {
-  if (viewOnly || user !== currentUser) return;
-  scores[user] = Math.max(0, scores[user] + value);
-  db.collection("scores").doc(user).set({ value: scores[user] });
-  updateScores();
-}
+        function startCountdown() {
+            const hoursEl = document.getElementById("hours");
+            const minutesEl = document.getElementById("minutes");
+            const secondsEl = document.getElementById("seconds");
 
-// ✅ FIXED FUNCTION (NO CRASH)
-function updateScores() {
-  const e = document.getElementById("score-ERON");
-  const l = document.getElementById("score-LAWIN");
-  if (e) e.innerText = scores.ERON;
-  if (l) l.innerText = scores.LAWIN;
-}
-</script>
+            setInterval(() => {
+                if (timeLeft <= 0) return;
+
+                timeLeft--;
+
+                let hours = Math.floor(timeLeft / 3600);
+                let minutes = Math.floor((timeLeft % 3600) / 60);
+                let seconds = timeLeft % 60;
+
+                hoursEl.textContent = String(hours).padStart(2, "0");
+                minutesEl.textContent = String(minutes).padStart(2, "0");
+                secondsEl.textContent = String(seconds).padStart(2, "0");
+            }, 1000);
+        }
+
+        startCountdown();
+    </script>
 
 </body>
+
 </html>

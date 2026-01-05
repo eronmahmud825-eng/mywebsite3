@@ -6,7 +6,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
-* { box-sizing: border-box; font-family: "Segoe UI", sans-serif; }
+* {
+  box-sizing: border-box;
+  font-family: "Segoe UI", sans-serif;
+}
 
 body {
   margin: 0;
@@ -20,7 +23,7 @@ body {
 .login-container {
   background: white;
   width: 90%;
-  max-width: 360px;
+  max-width: 350px;
   padding: 25px;
   border-radius: 15px;
   text-align: center;
@@ -38,9 +41,15 @@ button {
   cursor: pointer;
 }
 
-.dashboard { width: 100%; padding: 15px; }
+.dashboard {
+  width: 100%;
+  padding: 15px;
+}
 
-.dashboard h2 { color: white; text-align: center; }
+.dashboard h2 {
+  color: white;
+  text-align: center;
+}
 
 .user-card {
   background: white;
@@ -66,7 +75,6 @@ button {
 
 .plus { background: #198754; }
 .minus { background: #dc3545; }
-.view-btn { background: #6b7280; }
 </style>
 </head>
 
@@ -76,14 +84,14 @@ button {
   <h1>Select Account</h1>
   <button onclick="selectUser('ERON')">ERON</button>
   <button onclick="selectUser('LAWIN')">LAWIN</button>
-  <button class="view-btn" onclick="viewDashboard()">VIEW DASHBOARD</button>
 </div>
 
-<!-- FIREBASE v8 -->
+<!-- 🔥 FIREBASE v8 (STABLE) -->
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
 
 <script>
+// 🔥 FIREBASE CONFIG
 firebase.initializeApp({
   apiKey: "AIzaSyCfVDdwgkMkhdd-1TIQJbd3M_UWvNZQw8k",
   authDomain: "score-dashboard-304f0.firebaseapp.com",
@@ -92,44 +100,46 @@ firebase.initializeApp({
 
 const db = firebase.firestore();
 
-const passwords = { ERON: "0022", LAWIN: "0023" };
+// PASSWORDS
+const passwords = {
+  ERON: "0022",
+  LAWIN: "0023"
+};
+
 let scores = { ERON: 0, LAWIN: 0 };
 let currentUser = "";
-let viewOnly = false;
 
-// SELECT USER
+// SELECT USER + PASSWORD
 function selectUser(user) {
   const pass = prompt(`Enter password for ${user}`);
+
   if (pass !== passwords[user]) {
     alert("Wrong password ❌");
     return;
   }
-  viewOnly = false;
+
   openDashboard(user);
 }
 
-// VIEW ONLY
-function viewDashboard() {
-  viewOnly = true;
-  currentUser = "";
-  openDashboard("");
-}
-
-// DASHBOARD
+// OPEN DASHBOARD
 function openDashboard(user) {
+  currentUser = user;
+
   document.getElementById("app").innerHTML = `
     <div class="dashboard">
-      <h2>${viewOnly ? "Score Dashboard" : user + " Dashboard"}</h2>
+      <h2>${user} Dashboard</h2>
       ${card("ERON")}
       ${card("LAWIN")}
     </div>
   `;
+
   loadScores();
 }
 
+// USER CARD
 function card(name) {
   let controls = "";
-  if (!viewOnly && name === currentUser) {
+  if (name === currentUser) {
     controls = `
       <div class="controls">
         <button class="plus" onclick="changeScore('${name}',1)">+</button>
@@ -137,6 +147,7 @@ function card(name) {
       </div>
     `;
   }
+
   return `
     <div class="user-card">
       <h3>${name}</h3>
@@ -146,12 +157,16 @@ function card(name) {
   `;
 }
 
-// FIREBASE LOAD
+// LOAD FROM FIREBASE
 function loadScores() {
   ["ERON","LAWIN"].forEach(user => {
     db.collection("scores").doc(user).get().then(doc => {
-      if (doc.exists) scores[user] = doc.data().value;
-      else db.collection("scores").doc(user).set({ value: 0 });
+      if (doc.exists) {
+        scores[user] = doc.data().value;
+      } else {
+        scores[user] = 0;
+        db.collection("scores").doc(user).set({ value: 0 });
+      }
       updateScores();
     });
   });
@@ -159,20 +174,29 @@ function loadScores() {
 
 // CHANGE SCORE
 function changeScore(user, value) {
-  if (viewOnly || user !== currentUser) return;
-  scores[user] = Math.max(0, scores[user] + value);
-  db.collection("scores").doc(user).set({ value: scores[user] });
+  if (user !== currentUser) return;
+
+  scores[user] += value;
+  if (scores[user] < 0) scores[user] = 0;
+
+  db.collection("scores").doc(user).set({
+    value: scores[user]
+  });
+
   updateScores();
 }
 
-// ✅ FIXED FUNCTION (NO CRASH)
+// UPDATE UI
 function updateScores() {
-  const e = document.getElementById("score-ERON");
-  const l = document.getElementById("score-LAWIN");
-  if (e) e.innerText = scores.ERON;
-  if (l) l.innerText = scores.LAWIN;
+  if (document.getElementById("score-ERON"))
+    document.getElementById("score-ERON").innerText = scores.ERON;
+
+  if (document.getElementById("score-LAWIN"))
+    document.getElementById("score-LAWIN").innerText = scores.LAWIN;
 }
 </script>
 
 </body>
 </html>
+
+

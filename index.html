@@ -6,43 +6,24 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
-:root {
-  --bg: linear-gradient(135deg, #0d6efd, #6610f2);
-  --card: #ffffff;
-  --text: #000000;
-  --btn: #0d6efd;
-}
-
-body.dark {
-  --bg: linear-gradient(135deg, #0f172a, #020617);
-  --card: #111827;
-  --text: #ffffff;
-  --btn: #2563eb;
-}
-
-* {
-  box-sizing: border-box;
-  font-family: "Segoe UI", sans-serif;
-}
+* { box-sizing: border-box; font-family: "Segoe UI", sans-serif; }
 
 body {
   margin: 0;
-  background: var(--bg);
+  background: linear-gradient(135deg, #0d6efd, #6610f2);
   min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--text);
 }
 
 .login-container {
-  background: var(--card);
+  background: white;
   width: 90%;
   max-width: 360px;
   padding: 25px;
   border-radius: 15px;
   text-align: center;
-  position: relative;
 }
 
 button {
@@ -52,23 +33,17 @@ button {
   font-size: 18px;
   border: none;
   border-radius: 10px;
-  background: var(--btn);
+  background: #0d6efd;
   color: white;
   cursor: pointer;
 }
 
-.dashboard {
-  width: 100%;
-  padding: 15px;
-}
+.dashboard { width: 100%; padding: 15px; }
 
-.dashboard h2 {
-  text-align: center;
-  color: white;
-}
+.dashboard h2 { color: white; text-align: center; }
 
 .user-card {
-  background: var(--card);
+  background: white;
   border-radius: 15px;
   padding: 20px;
   margin-bottom: 15px;
@@ -89,28 +64,15 @@ button {
   border-radius: 50%;
 }
 
-.plus { background: #16a34a; }
-.minus { background: #dc2626; }
-
-.view-btn {
-  background: #6b7280;
-}
-
-.theme-btn {
-  position: absolute;
-  top: 15px;
-  right: 15px;
-  width: auto;
-  padding: 8px 12px;
-  font-size: 14px;
-}
+.plus { background: #198754; }
+.minus { background: #dc3545; }
+.view-btn { background: #6b7280; }
 </style>
 </head>
 
 <body>
 
 <div class="login-container" id="app">
-  <button class="theme-btn" onclick="toggleTheme()">🌙</button>
   <h1>Select Account</h1>
   <button onclick="selectUser('ERON')">ERON</button>
   <button onclick="selectUser('LAWIN')">LAWIN</button>
@@ -122,41 +84,31 @@ button {
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
 
 <script>
-// 🔥 FIREBASE
 firebase.initializeApp({
   apiKey: "AIzaSyCfVDdwgkMkhdd-1TIQJbd3M_UWvNZQw8k",
   authDomain: "score-dashboard-304f0.firebaseapp.com",
   projectId: "score-dashboard-304f0"
 });
+
 const db = firebase.firestore();
 
-// USERS
 const passwords = { ERON: "0022", LAWIN: "0023" };
 let scores = { ERON: 0, LAWIN: 0 };
 let currentUser = "";
 let viewOnly = false;
 
-// THEME
-function toggleTheme() {
-  document.body.classList.toggle("dark");
-  localStorage.setItem("theme",
-    document.body.classList.contains("dark") ? "dark" : "light"
-  );
-}
-
-if (localStorage.getItem("theme") === "dark") {
-  document.body.classList.add("dark");
-}
-
-// LOGIN
+// SELECT USER
 function selectUser(user) {
   const pass = prompt(`Enter password for ${user}`);
-  if (pass !== passwords[user]) return alert("Wrong password ❌");
-
+  if (pass !== passwords[user]) {
+    alert("Wrong password ❌");
+    return;
+  }
   viewOnly = false;
   openDashboard(user);
 }
 
+// VIEW ONLY
 function viewDashboard() {
   viewOnly = true;
   currentUser = "";
@@ -194,7 +146,7 @@ function card(name) {
   `;
 }
 
-// FIREBASE
+// FIREBASE LOAD
 function loadScores() {
   ["ERON","LAWIN"].forEach(user => {
     db.collection("scores").doc(user).get().then(doc => {
@@ -205,6 +157,7 @@ function loadScores() {
   });
 }
 
+// CHANGE SCORE
 function changeScore(user, value) {
   if (viewOnly || user !== currentUser) return;
   scores[user] = Math.max(0, scores[user] + value);
@@ -212,15 +165,14 @@ function changeScore(user, value) {
   updateScores();
 }
 
+// ✅ FIXED FUNCTION (NO CRASH)
 function updateScores() {
-  if (document.getElementById("score-ERON"))
-    score-ERON.innerText = scores.ERON;
-  if (document.getElementById("score-LAWIN"))
-    score-LAWIN.innerText = scores.LAWIN;
+  const e = document.getElementById("score-ERON");
+  const l = document.getElementById("score-LAWIN");
+  if (e) e.innerText = scores.ERON;
+  if (l) l.innerText = scores.LAWIN;
 }
 </script>
 
 </body>
 </html>
-
-

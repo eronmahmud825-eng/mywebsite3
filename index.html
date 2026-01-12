@@ -75,6 +75,14 @@ button {
 
 .plus { background: #198754; }
 .minus { background: #dc3545; }
+
+.history {
+  text-align: left;
+  font-size: 14px;
+  margin-top: 10px;
+  max-height: 120px;
+  overflow-y: auto;
+}
 </style>
 </head>
 
@@ -86,7 +94,7 @@ button {
   <button onclick="selectUser('LAWIN')">LAWIN</button>
 </div>
 
-<!-- 🔥 FIREBASE v8 (STABLE) -->
+<!-- 🔥 FIREBASE v8 -->
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
 
@@ -106,18 +114,30 @@ const passwords = {
   LAWIN: "0023"
 };
 
-let scores = { ERON: 0, LAWIN: 0 };
 let currentUser = "";
+let scores = { ERON: 0, LAWIN: 0 };
+let histories = { ERON: [], LAWIN: [] };
 
-// SELECT USER + PASSWORD
+// TIME FORMAT
+function getNow() {
+  const d = new Date();
+  return d.toLocaleString("en-US", {
+    weekday: "long",
+    month: "numeric",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true
+  });
+}
+
+// SELECT USER
 function selectUser(user) {
   const pass = prompt(`Enter password for ${user}`);
-
   if (pass !== passwords[user]) {
     alert("Wrong password ❌");
     return;
   }
-
   openDashboard(user);
 }
 
@@ -128,16 +148,16 @@ function openDashboard(user) {
   document.getElementById("app").innerHTML = `
     <div class="dashboard">
       <h2>${user} Dashboard</h2>
-      ${card("ERON")}
-      ${card("LAWIN")}
+      ${createCard("ERON")}
+      ${createCard("LAWIN")}
     </div>
   `;
 
-  loadScores();
+  loadData();
 }
 
 // USER CARD
-function card(name) {
+function createCard(name) {
   let controls = "";
   if (name === currentUser) {
     controls = `
@@ -153,21 +173,27 @@ function card(name) {
       <h3>${name}</h3>
       <div class="score" id="score-${name}">0</div>
       ${controls}
+      <div class="history" id="history-${name}"></div>
     </div>
   `;
 }
 
 // LOAD FROM FIREBASE
-function loadScores() {
+function loadData() {
   ["ERON","LAWIN"].forEach(user => {
     db.collection("scores").doc(user).get().then(doc => {
       if (doc.exists) {
-        scores[user] = doc.data().value;
+        scores[user] = doc.data().value || 0;
+        histories[user] = doc.data().history || [];
       } else {
+        db.collection("scores").doc(user).set({
+          value: 0,
+          history: []
+        });
         scores[user] = 0;
-        db.collection("scores").doc(user).set({ value: 0 });
+        histories[user] = [];
       }
-      updateScores();
+      updateUI(user);
     });
   });
 }
@@ -176,27 +202,37 @@ function loadScores() {
 function changeScore(user, value) {
   if (user !== currentUser) return;
 
-  scores[user] += value;
-  if (scores[user] < 0) scores[user] = 0;
+  if (value === 1) {
+    scores[user]++;
+    histories[user].push(getNow());
+  }
+
+  if (value === -1 && scores[user] > 0) {
+    scores[user]--;
+    histories[user].pop();
+  }
 
   db.collection("scores").doc(user).set({
-    value: scores[user]
+    value: scores[user],
+    history: histories[user]
   });
 
-  updateScores();
+  updateUI(user);
 }
 
 // UPDATE UI
-function updateScores() {
-  if (document.getElementById("score-ERON"))
-    document.getElementById("score-ERON").innerText = scores.ERON;
+function updateUI(user) {
+  document.getElementById(`score-${user}`).innerText = scores[user];
 
-  if (document.getElementById("score-LAWIN"))
-    document.getElementById("score-LAWIN").innerText = scores.LAWIN;
+  const hBox = document.getElementById(`history-${user}`);
+  hBox.innerHTML = "<b>History:</b><br>" +
+    histories[user].map(h => "• " + h).join("<br>");
 }
 </script>
 
 </body>
 </html>
+
+
 
 

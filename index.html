@@ -1,4 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
 
+<head>
+    <meta charset="UTF-8">
+    <title>Score Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: "Segoe UI", sans-serif
+        }
+        
+        body {
+            margin: 0;
+            background: linear-gradient(135deg, #0d6efd, #6610f2);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .login-container {
+            background: white;
+            width: 90%;
+            max-width: 380px;
+            padding: 25px;
+            border-radius: 15px;
+            text-align: center;
+        }
+        
+        button {
+            width: 100%;
+            padding: 14px;
+            margin-top: 12px;
+            font-size: 16px;
+            border: none;
+            border-radius: 10px;
+            background: #0d6efd;
+            color: white;
+            cursor: pointer;
+        }
+        
+        .toggle {
+            background: #212529;
+        }
+        
+        .dashboard {
+            width: 100%;
+            padding: 15px
+        }
+        
+        .dashboard h2 {
+            color: white;
+            text-align: center
+        }
+        
+        .user-card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        
+        .score {
+            font-size: 48px;
+            font-weight: bold
+        }
+        
+        .controls button {
+            width: 60px;
+            height: 60px;
+            font-size: 28px;
+            margin: 5px;
+            border-radius: 50%
+        }
+        
+        .plus {
+            background: #198754
+        }
+        
+        .minus {
+            background: #dc3545
+        }
+        
+        .history {
+            text-align: left;
+            font-size: 14px;
+            margin-top: 10px;
+            max-height: 140px;
+            overflow-y: auto;
+        }
+        
+        .hist-item {
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .del {
+            color: red;
+            cursor: pointer;
+            font-weight: bold
+        }
+    </style>
+</head>
 
+<body>
+
+    <div class="login-container" id="app">
+        <h2>Select Mode</h2>
+        <button onclick="selectUser('ERON')">ERON</button>
+        <button onclick="selectUser('LAWIN')">LAWIN</button>
+        <button onclick="openGuest()">👀 GUEST</button>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+
+    <script>
+        firebase.initializeApp({
+            apiKey: "AIzaSyCfVDdwgkMkhdd-1TIQJbd3M_UWvNZQw8k",
+            authDomain: "score-dashboard-304f0.firebaseapp.com",
+            projectId: "score-dashboard-304f0"
+        });
+        const db = firebase.firestore();
+
+        const passwords = {
+            ERON: "0022",
+            LAWIN: "0023"
+        };
+        const ADMIN_PASSWORD = "9999";
+
+        let currentUser = "";
+        let scores = {
+            ERON: 0,
+            LAWIN: 0
+        };
+        let histories = {
+            ERON: [],
+            LAWIN: []
+        };
+        let historyEnabled = true;
+        let chart;
+
+        function now() {
+            return new Date().toLocaleString("en-US", {
+                weekday: "long",
+                day: "numeric",
+                month: "numeric",
+                hour: "numeric",
+                minute: "2-digit",
+                hour12: true
+            });
+        }
+
+        function selectUser(user) {
+            const pass = prompt(`Enter password for ${user}`);
+            if (pass === ADMIN_PASSWORD) {
+                openAdmin();
+                return;
+            }
+            if (pass !== passwords[user]) {
+                alert("Wrong password");
+                return;
+            }
+            openDashboard(user);
+        }
+
+        function openGuest() {
+            currentUser = "GUEST";
+            document.getElementById("app").innerHTML = layout("👀 GUEST VIEW", false);
+            loadData();
+        }
+
+        function openDashboard(user) {
+            currentUser = user;
+            document.getElementById("app").innerHTML = layout(`${user} Dashboard`, false);
+            loadData();
+        }
+
+        function openAdmin() {
+            currentUser = "ADMIN";
+            document.getElementById("app").innerHTML = layout("👑 ADMIN DASHBOARD", true);
+            loadData();
+        }
+
+        function layout(title, isAdmin) {
+            return `
+  <div class="dashboard">
+    <h2>${title}</h2>
+
+    ${isAdmin?`
+      <button class="toggle" onclick="toggleHistory()">
+        History: ${historyEnabled?"ON ✅":"OFF ❌"}
+      </button>`:""}
+
+    <canvas id="scoreChart" height="120"></canvas>
+    ${card("ERON")}
+    ${card("LAWIN")}
+  </div>`;
+}
+
+function card(name){
+  return `
+  <div class="user-card">
+    <h3>${name}</h3>
+    <div class="score" id="score-${name}">0</div>
+
+    ${(currentUser===name||currentUser==="ADMIN")?`
+    <div class="controls">
+      <button class="plus" onclick="changeScore('${name}',1)">+</button>
+      <button class="minus" onclick="changeScore('${name}',-1)">-</button>
+    </div>`:""}
+
+    <div class="history" id="history-${name}"></div>
+  </div>`;
+}
+
+function loadData(){
+  db.collection("settings").doc("history").get().then(d=>{
+    if(d.exists) historyEnabled=d.data().enabled;
+  });
+
+  ["ERON","LAWIN"].forEach(u=>{
+    db.collection("scores").doc(u).get().then(d=>{
+      if(d.exists){
+        scores[u]=d.data().value||0;
+        histories[u]=d.data().history||[];
+      }else{
+        db.collection("scores").doc(u).set({value:0,history:[]});
+      }
+      updateUI(u);
+    });
+  });
+
+  setTimeout(drawChart,400);
+}
+
+function toggleHistory(){
+  historyEnabled=!historyEnabled;
+  db.collection("settings").doc("history").set({enabled:historyEnabled});
+  openAdmin();
+}
+
+function changeScore(user,val){
+  if(currentUser!==user&&currentUser!=="ADMIN")return;
+
+  if(val===1){
+    scores[user]++;
+    if(historyEnabled || currentUser!== "ADMIN")
+      histories[user].push(`${scores[user]} — ${now()}`);
+  }
+
+  if(val===-1 && scores[user]>0){
+    scores[user]--;
+    if(historyEnabled || currentUser!=="ADMIN")
+      histories[user].pop();
+  }
+
+  save(user);
+}
+
+function save(user){
+  db.collection("scores").doc(user).set({
+    value:scores[user],
+    history:histories[user]
+  });
+  updateUI(user);
+  updateChart();
+}
+
+function updateUI(user){
+  document.getElementById(`score-${user}`).innerText=scores[user];
+  document.getElementById(`history-${user}`).innerHTML=
+    "<b>History</b><br>"+
+    histories[user].map((h,i)=>`
+    <div class="hist-item">
+      <span>• ${h}</span>
+      ${currentUser==="ADMIN"?`<span class="del" onclick="deleteHistory('${user}',${i})">✖</span>`:""}
+    </div>`).join("");
+}
+
+function deleteHistory(user,i){
+  histories[user].splice(i,1);
+  scores[user]=histories[user].length;
+  save(user);
+}
+
+function drawChart(){
+  const ctx=document.getElementById("scoreChart").getContext("2d");
+  chart=new Chart(ctx,{
+    type:"bar",
+    data:{
+      labels:["ERON","LAWIN"],
+      datasets:[{
+        data:[scores.ERON,scores.LAWIN],
+        backgroundColor:["#198754","#dc3545"]
+      }]
+    },
+    options:{plugins:{legend:{display:false}}}
+  });
+}
+
+function updateChart(){
+  chart.data.datasets[0].data=[scores.ERON,scores.LAWIN];
+  chart.update();
+}
+    </script>
+
+</body>
+
+</html>

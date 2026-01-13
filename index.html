@@ -5,287 +5,220 @@
 <title>Score Dashboard</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<!-- Chart -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
-* {
-  box-sizing: border-box;
-  font-family: "Segoe UI", sans-serif;
+*{box-sizing:border-box;font-family:"Segoe UI",sans-serif}
+body{
+  margin:0;
+  background:linear-gradient(135deg,#0d6efd,#6610f2);
+  min-height:100vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
 }
-
-body {
-  margin: 0;
-  background: linear-gradient(135deg, #0d6efd, #6610f2);
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.login-container{
+  background:white;
+  width:90%;
+  max-width:380px;
+  padding:25px;
+  border-radius:15px;
+  text-align:center;
 }
-
-.login-container {
-  background: white;
-  width: 90%;
-  max-width: 380px;
-  padding: 25px;
-  border-radius: 15px;
-  text-align: center;
+button{
+  width:100%;
+  padding:14px;
+  margin-top:12px;
+  font-size:16px;
+  border:none;
+  border-radius:10px;
+  background:#0d6efd;
+  color:white;
+  cursor:pointer;
 }
-
-button {
-  width: 100%;
-  padding: 14px;
-  margin-top: 12px;
-  font-size: 16px;
-  border: none;
-  border-radius: 10px;
-  background: #0d6efd;
-  color: white;
-  cursor: pointer;
+.dashboard{width:100%;padding:15px}
+.dashboard h2{color:white;text-align:center}
+.user-card{
+  background:white;
+  border-radius:15px;
+  padding:20px;
+  margin-bottom:15px;
+  text-align:center;
 }
-
-.dashboard {
-  width: 100%;
-  padding: 15px;
+.score{font-size:48px;font-weight:bold}
+.controls button{
+  width:60px;height:60px;font-size:28px;margin:5px;border-radius:50%
 }
-
-.dashboard h2 {
-  color: white;
-  text-align: center;
+.plus{background:#198754}
+.minus{background:#dc3545}
+.history{
+  text-align:left;
+  font-size:14px;
+  margin-top:10px;
+  max-height:140px;
+  overflow-y:auto;
 }
-
-.user-card {
-  background: white;
-  border-radius: 15px;
-  padding: 20px;
-  margin-bottom: 15px;
-  text-align: center;
+.hist-item{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
 }
-
-.score {
-  font-size: 48px;
-  font-weight: bold;
-}
-
-.controls button {
-  width: 60px;
-  height: 60px;
-  font-size: 28px;
-  margin: 5px;
-  border-radius: 50%;
-}
-
-.plus { background: #198754; }
-.minus { background: #dc3545; }
-
-.history {
-  text-align: left;
-  font-size: 14px;
-  margin-top: 10px;
-  max-height: 140px;
-  overflow-y: auto;
-}
+.del{color:red;font-weight:bold;cursor:pointer}
 </style>
 </head>
 
 <body>
 
 <div class="login-container" id="app">
-  <h2>Select Account</h2>
+  <h2>Select Mode</h2>
   <button onclick="selectUser('ERON')">ERON</button>
   <button onclick="selectUser('LAWIN')">LAWIN</button>
+  <button onclick="openGuest()">👀 GUEST (View Only)</button>
 </div>
 
-<!-- Firebase v8 -->
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
 
 <script>
-// 🔥 FIREBASE CONFIG
 firebase.initializeApp({
-  apiKey: "AIzaSyCfVDdwgkMkhdd-1TIQJbd3M_UWvNZQw8k",
-  authDomain: "score-dashboard-304f0.firebaseapp.com",
-  projectId: "score-dashboard-304f0"
+  apiKey:"AIzaSyCfVDdwgkMkhdd-1TIQJbd3M_UWvNZQw8k",
+  authDomain:"score-dashboard-304f0.firebaseapp.com",
+  projectId:"score-dashboard-304f0"
 });
-const db = firebase.firestore();
+const db=firebase.firestore();
 
-// PASSWORDS
-const passwords = {
-  ERON: "0022",
-  LAWIN: "0023"
-};
-const ADMIN_PASSWORD = "9999";
+const passwords={ERON:"0022",LAWIN:"0023"};
+const ADMIN_PASSWORD="9999";
 
-let currentUser = "";
-let scores = { ERON: 0, LAWIN: 0 };
-let histories = { ERON: [], LAWIN: [] };
+let currentUser="";
+let scores={ERON:0,LAWIN:0};
+let histories={ERON:[],LAWIN:[]};
 let chart;
 
-// DATE FORMAT
-function now() {
-  return new Date().toLocaleString("en-US", {
-    weekday: "long",
-    day: "numeric",
-    month: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-    hour12: true
+function now(){
+  return new Date().toLocaleString("en-US",{
+    weekday:"long",day:"numeric",month:"numeric",
+    hour:"numeric",minute:"2-digit",hour12:true
   });
 }
 
-// LOGIN
-function selectUser(user) {
-  const pass = prompt(`Enter password for ${user}`);
-
-  if (pass === ADMIN_PASSWORD) {
-    openAdminDashboard();
-    return;
-  }
-
-  if (pass !== passwords[user]) {
-    alert("Wrong password ❌");
-    return;
-  }
-
+function selectUser(user){
+  const pass=prompt(`Enter password for ${user}`);
+  if(pass===ADMIN_PASSWORD){openAdmin();return;}
+  if(pass!==passwords[user]){alert("Wrong password");return;}
   openDashboard(user);
 }
 
-// DASHBOARD
-function openDashboard(user) {
-  currentUser = user;
-
-  document.getElementById("app").innerHTML = `
-    <div class="dashboard">
-      <h2>${user} Dashboard</h2>
-      <canvas id="scoreChart" height="120"></canvas>
-      ${card("ERON")}
-      ${card("LAWIN")}
-    </div>
-  `;
-
+function openGuest(){
+  currentUser="GUEST";
+  document.getElementById("app").innerHTML=layout("👀 GUEST VIEW");
   loadData();
 }
 
-// ADMIN DASHBOARD
-function openAdminDashboard() {
-  currentUser = "ADMIN";
-
-  document.getElementById("app").innerHTML = `
-    <div class="dashboard">
-      <h2>👑 ADMIN DASHBOARD</h2>
-
-      <button onclick="resetAll()">Reset All Scores</button>
-      <button onclick="clearAllHistory()">Clear All History</button>
-
-      <canvas id="scoreChart" height="120"></canvas>
-      ${card("ERON")}
-      ${card("LAWIN")}
-    </div>
-  `;
-
+function openDashboard(user){
+  currentUser=user;
+  document.getElementById("app").innerHTML=layout(`${user} Dashboard`);
   loadData();
 }
 
-// USER CARD
-function card(name) {
+function openAdmin(){
+  currentUser="ADMIN";
+  document.getElementById("app").innerHTML=layout("👑 ADMIN DASHBOARD");
+  loadData();
+}
+
+function layout(title){
   return `
-    <div class="user-card">
-      <h3>${name}</h3>
-      <div class="score" id="score-${name}">0</div>
-
-      ${(name === currentUser || currentUser === "ADMIN") ? `
-      <div class="controls">
-        <button class="plus" onclick="changeScore('${name}',1)">+</button>
-        <button class="minus" onclick="changeScore('${name}',-1)">-</button>
-      </div>` : ""}
-
-      <div class="history" id="history-${name}"></div>
-    </div>
-  `;
+  <div class="dashboard">
+    <h2>${title}</h2>
+    <canvas id="scoreChart" height="120"></canvas>
+    ${card("ERON")}
+    ${card("LAWIN")}
+  </div>`;
 }
 
-// LOAD FIREBASE
-function loadData() {
-  ["ERON","LAWIN"].forEach(u => {
-    db.collection("scores").doc(u).get().then(doc => {
-      if (doc.exists) {
-        scores[u] = doc.data().value || 0;
-        histories[u] = doc.data().history || [];
-      } else {
-        db.collection("scores").doc(u).set({ value: 0, history: [] });
+function card(name){
+  return `
+  <div class="user-card">
+    <h3>${name}</h3>
+    <div class="score" id="score-${name}">0</div>
+
+    ${(currentUser===name||currentUser==="ADMIN")?`
+    <div class="controls">
+      <button class="plus" onclick="changeScore('${name}',1)">+</button>
+      <button class="minus" onclick="changeScore('${name}',-1)">-</button>
+    </div>`:""}
+
+    <div class="history" id="history-${name}"></div>
+  </div>`;
+}
+
+function loadData(){
+  ["ERON","LAWIN"].forEach(u=>{
+    db.collection("scores").doc(u).get().then(d=>{
+      if(d.exists){
+        scores[u]=d.data().value||0;
+        histories[u]=d.data().history||[];
+      }else{
+        db.collection("scores").doc(u).set({value:0,history:[]});
       }
       updateUI(u);
     });
   });
-
-  setTimeout(drawChart, 500);
+  setTimeout(drawChart,400);
 }
 
-// CHANGE SCORE
-function changeScore(user, val) {
-  if (currentUser !== user && currentUser !== "ADMIN") return;
+function changeScore(user,val){
+  if(currentUser!==user&&currentUser!=="ADMIN")return;
+  if(val===1){scores[user]++;histories[user].push(`${scores[user]} — ${now()}`);}
+  else if(val===-1&&scores[user]>0){scores[user]--;histories[user].pop();}
+  save(user);
+}
 
-  if (val === 1) {
-    scores[user]++;
-    histories[user].push(`${scores[user]} — ${now()}`);
-  } else if (val === -1 && scores[user] > 0) {
-    scores[user]--;
-    histories[user].pop();
-  }
+function deleteHistory(user,index){
+  if(currentUser!=="ADMIN")return;
+  histories[user].splice(index,1);
+  scores[user]=histories[user].length;
+  save(user);
+}
 
+function save(user){
   db.collection("scores").doc(user).set({
-    value: scores[user],
-    history: histories[user]
+    value:scores[user],
+    history:histories[user]
   });
-
   updateUI(user);
   updateChart();
 }
 
-// ADMIN ACTIONS
-function resetAll() {
-  ["ERON","LAWIN"].forEach(u => {
-    scores[u] = 0;
-    histories[u] = [];
-    db.collection("scores").doc(u).set({ value: 0, history: [] });
-    updateUI(u);
-  });
-  updateChart();
+function updateUI(user){
+  document.getElementById(`score-${user}`).innerText=scores[user];
+  document.getElementById(`history-${user}`).innerHTML=
+    "<b>History</b><br>"+
+    histories[user].map((h,i)=>`
+    <div class="hist-item">
+      <span>• ${h}</span>
+      ${currentUser==="ADMIN"?`<span class="del" onclick="deleteHistory('${user}',${i})">✖</span>`:""}
+    </div>`).join("");
 }
 
-function clearAllHistory() {
-  ["ERON","LAWIN"].forEach(u => {
-    histories[u] = [];
-    db.collection("scores").doc(u).update({ history: [] });
-    updateUI(u);
-  });
-}
-
-// UPDATE UI
-function updateUI(user) {
-  document.getElementById(`score-${user}`).innerText = scores[user];
-  document.getElementById(`history-${user}`).innerHTML =
-    "<b>History</b><br>" + histories[user].map(h => "• " + h).join("<br>");
-}
-
-// CHART
-function drawChart() {
-  const ctx = document.getElementById("scoreChart").getContext("2d");
-  chart = new Chart(ctx, {
-    type: "bar",
-    data: {
-      labels: ["ERON", "LAWIN"],
-      datasets: [{
-        data: [scores.ERON, scores.LAWIN],
-        backgroundColor: ["#198754", "#dc3545"]
+function drawChart(){
+  const ctx=document.getElementById("scoreChart").getContext("2d");
+  chart=new Chart(ctx,{
+    type:"bar",
+    data:{
+      labels:["ERON","LAWIN"],
+      datasets:[{
+        data:[scores.ERON,scores.LAWIN],
+        backgroundColor:["#198754","#dc3545"]
       }]
     },
-    options: { plugins: { legend: { display: false } } }
+    options:{plugins:{legend:{display:false}}}
   });
 }
 
-function updateChart() {
-  chart.data.datasets[0].data = [scores.ERON, scores.LAWIN];
+function updateChart(){
+  chart.data.datasets[0].data=[scores.ERON,scores.LAWIN];
   chart.update();
 }
 </script>

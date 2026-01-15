@@ -20,7 +20,7 @@ body{
 .login-container{
   background:white;
   width:90%;
-  max-width:380px;
+  max-width:400px;
   padding:25px;
   border-radius:15px;
   text-align:center;
@@ -36,8 +36,8 @@ button{
   color:white;
   cursor:pointer;
 }
-.toggle{background:#212529}
 .back{background:#6c757d}
+.toggle{background:#212529}
 .dashboard{width:100%;padding:15px}
 .dashboard h2{color:white;text-align:center}
 .user-card{
@@ -53,10 +53,20 @@ button{
 }
 .plus{background:#198754}
 .minus{background:#dc3545}
-.history{font-size:14px;margin-top:10px;text-align:left}
-.hist-item{display:flex;justify-content:space-between;align-items:center}
-.edit{color:#0d6efd;cursor:pointer;margin-left:6px}
-.del{color:red;cursor:pointer;margin-left:6px}
+.history{
+  text-align:left;
+  font-size:14px;
+  margin-top:10px;
+  max-height:150px;
+  overflow-y:auto;
+}
+.hist-item{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+.del{color:red;cursor:pointer;font-weight:bold}
+.edit{color:#0d6efd;cursor:pointer;margin-right:8px}
 </style>
 </head>
 
@@ -66,7 +76,7 @@ button{
   <h2>Select Mode</h2>
   <button onclick="selectUser('ERON')">ERON</button>
   <button onclick="selectUser('LAWIN')">LAWIN</button>
-  <button onclick="openGuest()">👀 GUEST</button>
+  <button onclick="openGuest()">👀 GUEST (View Only)</button>
 </div>
 
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
@@ -87,46 +97,63 @@ let currentUser="";
 let scores={ERON:0,LAWIN:0};
 let histories={ERON:[],LAWIN:[]};
 let historyEnabled=true;
-let chart=null;
+let chart;
 
+/* TIME */
 function now(){
-  return new Date().toLocaleString();
+  return new Date().toLocaleString("en-US",{
+    weekday:"long",day:"numeric",month:"numeric",
+    hour:"numeric",minute:"2-digit",hour12:true
+  });
 }
 
-function home(){
-  location.reload();
-}
-
+/* LOGIN */
 function selectUser(user){
   const pass=prompt(`Enter password for ${user}`);
-  if(pass===ADMIN_PASSWORD) return openAdmin();
-  if(pass!==passwords[user]) return alert("Wrong password");
+  if(pass===ADMIN_PASSWORD){openAdmin();return;}
+  if(pass!==passwords[user]){alert("Wrong password");return;}
   openDashboard(user);
 }
 
-function openGuest(){render("👀 GUEST VIEW",false,"GUEST")}
-function openDashboard(u){render(`${u} Dashboard`,false,u)}
-function openAdmin(){render("👑 ADMIN DASHBOARD",true,"ADMIN")}
+function openGuest(){
+  currentUser="GUEST";
+  document.getElementById("app").innerHTML=layout("👀 GUEST VIEW",false);
+  loadData();
+}
 
-function render(title,isAdmin,user){
+function openDashboard(user){
   currentUser=user;
-  document.getElementById("app").innerHTML=`
+  document.getElementById("app").innerHTML=layout(`${user} Dashboard`,false);
+  loadData();
+}
+
+function openAdmin(){
+  currentUser="ADMIN";
+  document.getElementById("app").innerHTML=layout("👑 ADMIN DASHBOARD",true);
+  loadData();
+}
+
+/* LAYOUT */
+function layout(title,isAdmin){
+  return `
   <div class="dashboard">
     <h2>${title}</h2>
 
     ${isAdmin?`
-    <button class="toggle" onclick="toggleHistory()">
-      History: ${historyEnabled?"ON ✅":"OFF ❌"}
-    </button>`:""}
+      <button class="toggle" onclick="toggleHistory()">
+        History Saving: ${historyEnabled?"ON ✅":"OFF ❌"}
+      </button>`:""}
 
     <canvas id="scoreChart" height="120"></canvas>
+
     ${card("ERON")}
     ${card("LAWIN")}
-    <button class="back" onclick="home()">🏠 Back Home</button>
+
+    <button class="back" onclick="location.reload()">⬅ Back Home</button>
   </div>`;
-  loadData();
 }
 
+/* USER CARD */
 function card(name){
   return `
   <div class="user-card">
@@ -143,57 +170,60 @@ function card(name){
   </div>`;
 }
 
+/* LOAD DATA + FIX OLD HISTORY */
 function loadData(){
-  Promise.all([
-    db.collection("settings").doc("history").get(),
-    ...["ERON","LAWIN"].map(u=>db.collection("scores").doc(u).get())
-  ]).then(res=>{
-    if(res[0].exists) historyEnabled=res[0].data().enabled;
-    ["ERON","LAWIN"].forEach((u,i)=>{
-      const d=res[i+1];
+  db.collection("settings").doc("history").get().then(d=>{
+    if(d.exists) historyEnabled=d.data().enabled;
+  });
+
+  ["ERON","LAWIN"].forEach(u=>{
+    db.collection("scores").doc(u).get().then(d=>{
       if(d.exists){
         scores[u]=d.data().value||0;
-        histories[u]=d.data().history||[];
+
+        histories[u]=(d.data().history||[]).map(h=>{
+          if(typeof h==="string"){
+            const p=h.split(" — ");
+            return {v:parseInt(p[0])||0,t:p[1]||"Unknown"};
+          }
+          return h;
+        });
+      }else{
+        db.collection("scores").doc(u).set({value:0,history:[]});
       }
       updateUI(u);
     });
-    drawChart();
   });
+
+  setTimeout(drawChart,300);
 }
 
+/* TOGGLE HISTORY */
 function toggleHistory(){
   historyEnabled=!historyEnabled;
   db.collection("settings").doc("history").set({enabled:historyEnabled});
   openAdmin();
 }
 
+/* SCORE CHANGE */
 function changeScore(user,val){
-  if(currentUser!==user && currentUser!=="ADMIN") return;
+  if(currentUser!==user && currentUser!=="ADMIN")return;
 
   if(val===1){
     scores[user]++;
-    if(historyEnabled || currentUser!=="ADMIN")
+    if(historyEnabled)
       histories[user].push({v:scores[user],t:now()});
   }
+
   if(val===-1 && scores[user]>0){
     scores[user]--;
-    if(historyEnabled || currentUser!=="ADMIN")
-      histories[user].pop();
+    if(historyEnabled) histories[user].pop();
   }
+
   save(user);
 }
 
-function editTime(user,i){
-  const t=prompt("Edit time:",histories[user][i].t);
-  if(t){histories[user][i].t=t;save(user);}
-}
-
-function deleteHistory(user,i){
-  histories[user].splice(i,1);
-  scores[user]=histories[user].length;
-  save(user);
-}
-
+/* SAVE */
 function save(user){
   db.collection("scores").doc(user).set({
     value:scores[user],
@@ -203,23 +233,41 @@ function save(user){
   updateChart();
 }
 
+/* ADMIN EDIT */
+function editHistory(user,i){
+  const newTime=prompt("Edit time:",histories[user][i].t);
+  if(!newTime)return;
+  histories[user][i].t=newTime;
+  save(user);
+}
+
+function deleteHistory(user,i){
+  histories[user].splice(i,1);
+  scores[user]=histories[user].length
+    ? histories[user][histories[user].length-1].v
+    : 0;
+  save(user);
+}
+
+/* UI */
 function updateUI(user){
   document.getElementById(`score-${user}`).innerText=scores[user];
   document.getElementById(`history-${user}`).innerHTML=
-    "<b>History</b><br>"+histories[user].map((h,i)=>`
+    "<b>History</b><br>"+
+    histories[user].map((h,i)=>`
     <div class="hist-item">
-      <span>${h.v} — ${h.t}</span>
+      <span>• ${h.v} — ${h.t}</span>
       ${currentUser==="ADMIN"?`
-      <span>
-        <span class="edit" onclick="editTime('${user}',${i})">🕒</span>
-        <span class="del" onclick="deleteHistory('${user}',${i})">✖</span>
-      </span>`:""}
+        <span>
+          <span class="edit" onclick="editHistory('${user}',${i})">✏</span>
+          <span class="del" onclick="deleteHistory('${user}',${i})">✖</span>
+        </span>`:""}
     </div>`).join("");
 }
 
+/* CHART */
 function drawChart(){
   const ctx=document.getElementById("scoreChart").getContext("2d");
-  if(chart) chart.destroy();
   chart=new Chart(ctx,{
     type:"bar",
     data:{
@@ -241,5 +289,7 @@ function updateChart(){
 
 </body>
 </html>
+
+
 
 

@@ -1,195 +1,146 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-    <meta charset="UTF-8">
-    <title>Score Dashboard</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8">
+<title>Score Dashboard</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-    <style>
-        * {
-            box-sizing: border-box;
-            font-family: "Segoe UI", sans-serif
-        }
-        
-        body {
-            margin: 0;
-            background: linear-gradient(135deg, #0d6efd, #6610f2);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        .login-container {
-            background: white;
-            width: 90%;
-            max-width: 380px;
-            padding: 25px;
-            border-radius: 15px;
-            text-align: center;
-        }
-        
-        button {
-            width: 100%;
-            padding: 14px;
-            margin-top: 12px;
-            font-size: 16px;
-            border: none;
-            border-radius: 10px;
-            background: #0d6efd;
-            color: white;
-            cursor: pointer;
-        }
-        
-        .toggle {
-            background: #212529;
-        }
-        
-        .dashboard {
-            width: 100%;
-            padding: 15px
-        }
-        
-        .dashboard h2 {
-            color: white;
-            text-align: center
-        }
-        
-        .user-card {
-            background: white;
-            border-radius: 15px;
-            padding: 20px;
-            margin-bottom: 15px;
-            text-align: center;
-        }
-        
-        .score {
-            font-size: 48px;
-            font-weight: bold
-        }
-        
-        .controls button {
-            width: 60px;
-            height: 60px;
-            font-size: 28px;
-            margin: 5px;
-            border-radius: 50%
-        }
-        
-        .plus {
-            background: #198754
-        }
-        
-        .minus {
-            background: #dc3545
-        }
-        
-        .history {
-            text-align: left;
-            font-size: 14px;
-            margin-top: 10px;
-            max-height: 140px;
-            overflow-y: auto;
-        }
-        
-        .hist-item {
-            display: flex;
-            justify-content: space-between;
-        }
-        
-        .del {
-            color: red;
-            cursor: pointer;
-            font-weight: bold
-        }
-    </style>
+<style>
+*{box-sizing:border-box;font-family:"Segoe UI",sans-serif}
+body{
+  margin:0;
+  background:linear-gradient(135deg,#0d6efd,#6610f2);
+  min-height:100vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+.login-container{
+  background:white;
+  width:90%;
+  max-width:380px;
+  padding:25px;
+  border-radius:15px;
+  text-align:center;
+}
+button{
+  width:100%;
+  padding:14px;
+  margin-top:12px;
+  font-size:16px;
+  border:none;
+  border-radius:10px;
+  background:#0d6efd;
+  color:white;
+  cursor:pointer;
+}
+.toggle{background:#212529}
+.back{background:#6c757d}
+.dashboard{width:100%;padding:15px}
+.dashboard h2{color:white;text-align:center}
+.user-card{
+  background:white;
+  border-radius:15px;
+  padding:20px;
+  margin-bottom:15px;
+  text-align:center;
+}
+.score{font-size:48px;font-weight:bold}
+.controls button{
+  width:60px;height:60px;font-size:28px;margin:5px;border-radius:50%
+}
+.plus{background:#198754}
+.minus{background:#dc3545}
+.history{
+  text-align:left;
+  font-size:14px;
+  margin-top:10px;
+  max-height:140px;
+  overflow-y:auto;
+}
+.hist-item{
+  display:flex;
+  justify-content:space-between;
+}
+.del{color:red;cursor:pointer;font-weight:bold}
+</style>
 </head>
 
 <body>
 
-    <div class="login-container" id="app">
-        <h2>Select Mode</h2>
-        <button onclick="selectUser('ERON')">ERON</button>
-        <button onclick="selectUser('LAWIN')">LAWIN</button>
-        <button onclick="openGuest()">👀 GUEST</button>
-    </div>
+<div class="login-container" id="app">
+  <h2>Select Mode</h2>
+  <button onclick="selectUser('ERON')">ERON</button>
+  <button onclick="selectUser('LAWIN')">LAWIN</button>
+  <button onclick="openGuest()">👀 GUEST</button>
+</div>
 
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
 
-    <script>
-        firebase.initializeApp({
-            apiKey: "AIzaSyCfVDdwgkMkhdd-1TIQJbd3M_UWvNZQw8k",
-            authDomain: "score-dashboard-304f0.firebaseapp.com",
-            projectId: "score-dashboard-304f0"
-        });
-        const db = firebase.firestore();
+<script>
+firebase.initializeApp({
+  apiKey:"AIzaSyCfVDdwgkMkhdd-1TIQJbd3M_UWvNZQw8k",
+  authDomain:"score-dashboard-304f0.firebaseapp.com",
+  projectId:"score-dashboard-304f0"
+});
+const db=firebase.firestore();
 
-        const passwords = {
-            ERON: "0022",
-            LAWIN: "0023"
-        };
-        const ADMIN_PASSWORD = "9999";
+const passwords={ERON:"0022",LAWIN:"0023"};
+const ADMIN_PASSWORD="9999";
 
-        let currentUser = "";
-        let scores = {
-            ERON: 0,
-            LAWIN: 0
-        };
-        let histories = {
-            ERON: [],
-            LAWIN: []
-        };
-        let historyEnabled = true;
-        let chart;
+let currentUser="";
+let scores={ERON:0,LAWIN:0};
+let histories={ERON:[],LAWIN:[]};
+let historyEnabled=true;
+let chart=null;
 
-        function now() {
-            return new Date().toLocaleString("en-US", {
-                weekday: "long",
-                day: "numeric",
-                month: "numeric",
-                hour: "numeric",
-                minute: "2-digit",
-                hour12: true
-            });
-        }
+function now(){
+  return new Date().toLocaleString("en-US",{
+    weekday:"long",day:"numeric",month:"numeric",
+    hour:"numeric",minute:"2-digit",hour12:true
+  });
+}
 
-        function selectUser(user) {
-            const pass = prompt(`Enter password for ${user}`);
-            if (pass === ADMIN_PASSWORD) {
-                openAdmin();
-                return;
-            }
-            if (pass !== passwords[user]) {
-                alert("Wrong password");
-                return;
-            }
-            openDashboard(user);
-        }
+function home(){
+  if(chart){chart.destroy();chart=null;}
+  document.getElementById("app").innerHTML=`
+    <h2>Select Mode</h2>
+    <button onclick="selectUser('ERON')">ERON</button>
+    <button onclick="selectUser('LAWIN')">LAWIN</button>
+    <button onclick="openGuest()">👀 GUEST</button>
+  `;
+}
 
-        function openGuest() {
-            currentUser = "GUEST";
-            document.getElementById("app").innerHTML = layout("👀 GUEST VIEW", false);
-            loadData();
-        }
+function selectUser(user){
+  const pass=prompt(`Enter password for ${user}`);
+  if(pass===ADMIN_PASSWORD){openAdmin();return;}
+  if(pass!==passwords[user]){alert("Wrong password");return;}
+  openDashboard(user);
+}
 
-        function openDashboard(user) {
-            currentUser = user;
-            document.getElementById("app").innerHTML = layout(`${user} Dashboard`, false);
-            loadData();
-        }
+function openGuest(){
+  currentUser="GUEST";
+  document.getElementById("app").innerHTML=layout("👀 GUEST VIEW",false);
+  loadData();
+}
 
-        function openAdmin() {
-            currentUser = "ADMIN";
-            document.getElementById("app").innerHTML = layout("👑 ADMIN DASHBOARD", true);
-            loadData();
-        }
+function openDashboard(user){
+  currentUser=user;
+  document.getElementById("app").innerHTML=layout(`${user} Dashboard`,false);
+  loadData();
+}
 
-        function layout(title, isAdmin) {
-            return `
+function openAdmin(){
+  currentUser="ADMIN";
+  document.getElementById("app").innerHTML=layout("👑 ADMIN DASHBOARD",true);
+  loadData();
+}
+
+function layout(title,isAdmin){
+  return `
   <div class="dashboard">
     <h2>${title}</h2>
 
@@ -199,8 +150,11 @@
       </button>`:""}
 
     <canvas id="scoreChart" height="120"></canvas>
+
     ${card("ERON")}
     ${card("LAWIN")}
+
+    <button class="back" onclick="home()">⬅ Back Home</button>
   </div>`;
 }
 
@@ -221,23 +175,22 @@ function card(name){
 }
 
 function loadData(){
-  db.collection("settings").doc("history").get().then(d=>{
-    if(d.exists) historyEnabled=d.data().enabled;
-  });
+  Promise.all([
+    db.collection("settings").doc("history").get(),
+    db.collection("scores").doc("ERON").get(),
+    db.collection("scores").doc("LAWIN").get()
+  ]).then(([s,e,l])=>{
+    if(s.exists) historyEnabled=s.data().enabled;
 
-  ["ERON","LAWIN"].forEach(u=>{
-    db.collection("scores").doc(u).get().then(d=>{
-      if(d.exists){
-        scores[u]=d.data().value||0;
-        histories[u]=d.data().history||[];
-      }else{
-        db.collection("scores").doc(u).set({value:0,history:[]});
-      }
-      updateUI(u);
-    });
-  });
+    scores.ERON=e.exists?e.data().value:0;
+    histories.ERON=e.exists?e.data().history:[];
+    scores.LAWIN=l.exists?l.data().value:0;
+    histories.LAWIN=l.exists?l.data().history:[];
 
-  setTimeout(drawChart,400);
+    updateUI("ERON");
+    updateUI("LAWIN");
+    drawChart();
+  });
 }
 
 function toggleHistory(){
@@ -251,7 +204,7 @@ function changeScore(user,val){
 
   if(val===1){
     scores[user]++;
-    if(historyEnabled || currentUser!== "ADMIN")
+    if(historyEnabled || currentUser!=="ADMIN")
       histories[user].push(`${scores[user]} — ${now()}`);
   }
 
@@ -278,10 +231,10 @@ function updateUI(user){
   document.getElementById(`history-${user}`).innerHTML=
     "<b>History</b><br>"+
     histories[user].map((h,i)=>`
-    <div class="hist-item">
-      <span>• ${h}</span>
-      ${currentUser==="ADMIN"?`<span class="del" onclick="deleteHistory('${user}',${i})">✖</span>`:""}
-    </div>`).join("");
+      <div class="hist-item">
+        <span>• ${h}</span>
+        ${currentUser==="ADMIN"?`<span class="del" onclick="deleteHistory('${user}',${i})">✖</span>`:""}
+      </div>`).join("");
 }
 
 function deleteHistory(user,i){
@@ -291,6 +244,7 @@ function deleteHistory(user,i){
 }
 
 function drawChart(){
+  if(chart) chart.destroy();
   const ctx=document.getElementById("scoreChart").getContext("2d");
   chart=new Chart(ctx,{
     type:"bar",
@@ -309,8 +263,7 @@ function updateChart(){
   chart.data.datasets[0].data=[scores.ERON,scores.LAWIN];
   chart.update();
 }
-    </script>
+</script>
 
 </body>
-
 </html>

@@ -8,75 +8,140 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
-*{box-sizing:border-box;font-family:"Segoe UI",sans-serif}
+:root{
+  --bg:#0b1020;
+  --card:#131a33;
+  --glass:rgba(255,255,255,.08);
+  --blue:#4f7cff;
+  --green:#22c55e;
+  --red:#ef4444;
+  --text:#e5e7eb;
+  --muted:#9ca3af;
+}
+
+*{box-sizing:border-box;font-family:Inter,system-ui}
+
 body{
   margin:0;
-  background:linear-gradient(135deg,#0d6efd,#6610f2);
   min-height:100vh;
+  background:
+    radial-gradient(circle at top,var(--blue),transparent 40%),
+    var(--bg);
   display:flex;
   align-items:center;
   justify-content:center;
+  color:var(--text);
 }
-.login-container{
-  background:white;
-  width:90%;
-  max-width:400px;
-  padding:25px;
-  border-radius:15px;
+
+/* LOGIN */
+.login{
+  width:92%;
+  max-width:420px;
+  background:var(--card);
+  border-radius:22px;
+  padding:28px;
+  box-shadow:0 30px 80px rgba(0,0,0,.6);
+}
+
+.login h2{
+  margin-bottom:20px;
   text-align:center;
 }
+
 button{
   width:100%;
   padding:14px;
   margin-top:12px;
-  font-size:16px;
   border:none;
-  border-radius:10px;
-  background:#0d6efd;
+  border-radius:14px;
+  font-size:15px;
+  background:var(--blue);
   color:white;
   cursor:pointer;
+  transition:.25s;
 }
-.back{background:#6c757d}
-.toggle{background:#212529}
-.dashboard{width:100%;padding:15px}
-.dashboard h2{color:white;text-align:center}
-.user-card{
-  background:white;
-  border-radius:15px;
-  padding:20px;
-  margin-bottom:15px;
+
+button:hover{transform:translateY(-2px);opacity:.9}
+.back{background:#374151}
+.toggle{background:#111827}
+
+/* DASHBOARD */
+.dashboard{
+  width:100%;
+  max-width:520px;
+  padding:16px;
+}
+
+.dashboard h2{
+  text-align:center;
+  margin-bottom:10px;
+}
+
+.card{
+  background:var(--card);
+  border-radius:20px;
+  padding:18px;
+  margin-bottom:16px;
+  box-shadow:0 20px 50px rgba(0,0,0,.5);
+}
+
+/* SCORE CARD */
+.user{
   text-align:center;
 }
-.score{font-size:48px;font-weight:bold}
+
+.score{
+  font-size:60px;
+  font-weight:800;
+  margin:6px 0;
+}
+
+.controls{
+  display:flex;
+  justify-content:center;
+  gap:20px;
+}
+
 .controls button{
-  width:60px;height:60px;font-size:28px;margin:5px;border-radius:50%
+  width:64px;
+  height:64px;
+  font-size:30px;
+  border-radius:50%;
 }
-.plus{background:#198754}
-.minus{background:#dc3545}
+
+.plus{background:var(--green)}
+.minus{background:var(--red)}
+
+/* HISTORY */
 .history{
-  text-align:left;
+  margin-top:12px;
+  max-height:160px;
+  overflow:auto;
   font-size:14px;
-  margin-top:10px;
-  max-height:150px;
-  overflow-y:auto;
 }
-.hist-item{
+
+.hist{
   display:flex;
   justify-content:space-between;
-  align-items:center;
+  padding:6px 0;
+  border-bottom:1px solid rgba(255,255,255,.06);
 }
-.del{color:red;cursor:pointer;font-weight:bold}
-.edit{color:#0d6efd;cursor:pointer;margin-right:8px}
+
+.edit{color:#60a5fa;cursor:pointer;margin-right:8px}
+.del{color:#f87171;cursor:pointer}
+
+/* CHART */
+canvas{margin-top:10px}
 </style>
 </head>
 
 <body>
 
-<div class="login-container" id="app">
+<div class="login" id="app">
   <h2>Select Mode</h2>
   <button onclick="selectUser('ERON')">ERON</button>
   <button onclick="selectUser('LAWIN')">LAWIN</button>
-  <button onclick="openGuest()">👀 GUEST (View Only)</button>
+  <button onclick="openGuest()">👀 Guest</button>
 </div>
 
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
@@ -99,188 +164,118 @@ let histories={ERON:[],LAWIN:[]};
 let historyEnabled=true;
 let chart;
 
-/* TIME */
-function now(){
-  return new Date().toLocaleString("en-US",{
-    weekday:"long",day:"numeric",month:"numeric",
-    hour:"numeric",minute:"2-digit",hour12:true
-  });
-}
+function now(){return new Date().toLocaleString();}
 
 /* LOGIN */
 function selectUser(user){
-  const pass=prompt(`Enter password for ${user}`);
-  if(pass===ADMIN_PASSWORD){openAdmin();return;}
-  if(pass!==passwords[user]){alert("Wrong password");return;}
-  openDashboard(user);
+  const p=prompt("Password:");
+  if(p===ADMIN_PASSWORD){openAdmin();return;}
+  if(p!==passwords[user]){alert("Wrong password");return;}
+  openDash(user);
 }
+function openGuest(){currentUser="GUEST";render("Guest View",false)}
+function openDash(u){currentUser=u;render(u+" Dashboard",false)}
+function openAdmin(){currentUser="ADMIN";render("Admin Dashboard",true)}
 
-function openGuest(){
-  currentUser="GUEST";
-  document.getElementById("app").innerHTML=layout("👀 GUEST VIEW",false);
-  loadData();
-}
-
-function openDashboard(user){
-  currentUser=user;
-  document.getElementById("app").innerHTML=layout(`${user} Dashboard`,false);
-  loadData();
-}
-
-function openAdmin(){
-  currentUser="ADMIN";
-  document.getElementById("app").innerHTML=layout("👑 ADMIN DASHBOARD",true);
-  loadData();
-}
-
-/* LAYOUT */
-function layout(title,isAdmin){
-  return `
+/* RENDER */
+function render(title,isAdmin){
+  document.getElementById("app").outerHTML=`
   <div class="dashboard">
     <h2>${title}</h2>
 
-    ${isAdmin?`
-      <button class="toggle" onclick="toggleHistory()">
-        History Saving: ${historyEnabled?"ON ✅":"OFF ❌"}
-      </button>`:""}
+    <div class="card">
+      ${isAdmin?`<button class="toggle" onclick="toggleHistory()">History ${historyEnabled?"ON":"OFF"}</button>`:""}
+      <canvas id="scoreChart" height="120"></canvas>
+    </div>
 
-    <canvas id="scoreChart" height="120"></canvas>
+    ${userCard("ERON")}
+    ${userCard("LAWIN")}
 
-    ${card("ERON")}
-    ${card("LAWIN")}
-
-    <button class="back" onclick="location.reload()">⬅ Back Home</button>
+    <button class="back" onclick="location.reload()">⬅ Back</button>
   </div>`;
+  load();
 }
 
-/* USER CARD */
-function card(name){
-  return `
-  <div class="user-card">
-    <h3>${name}</h3>
-    <div class="score" id="score-${name}">0</div>
+/* CARDS */
+function userCard(u){
+  return`
+  <div class="card user">
+    <h3>${u}</h3>
+    <div class="score" id="score-${u}">0</div>
 
-    ${(currentUser===name||currentUser==="ADMIN")?`
+    ${(currentUser===u||currentUser==="ADMIN")?`
     <div class="controls">
-      <button class="plus" onclick="changeScore('${name}',1)">+</button>
-      <button class="minus" onclick="changeScore('${name}',-1)">-</button>
+      <button class="plus" onclick="change('${u}',1)">+</button>
+      <button class="minus" onclick="change('${u}',-1)">-</button>
     </div>`:""}
 
-    <div class="history" id="history-${name}"></div>
+    <div class="history" id="history-${u}"></div>
   </div>`;
 }
 
-/* LOAD DATA + FIX OLD HISTORY */
-function loadData(){
-  db.collection("settings").doc("history").get().then(d=>{
-    if(d.exists) historyEnabled=d.data().enabled;
-  });
-
+/* DATA */
+function load(){
   ["ERON","LAWIN"].forEach(u=>{
     db.collection("scores").doc(u).get().then(d=>{
       if(d.exists){
         scores[u]=d.data().value||0;
-
-        histories[u]=(d.data().history||[]).map(h=>{
-          if(typeof h==="string"){
-            const p=h.split(" — ");
-            return {v:parseInt(p[0])||0,t:p[1]||"Unknown"};
-          }
-          return h;
-        });
-      }else{
-        db.collection("scores").doc(u).set({value:0,history:[]});
-      }
-      updateUI(u);
+        histories[u]=d.data().history||[];
+      }else db.collection("scores").doc(u).set({value:0,history:[]});
+      update(u);
     });
   });
-
-  setTimeout(drawChart,300);
+  setTimeout(draw,300);
 }
 
-/* TOGGLE HISTORY */
-function toggleHistory(){
-  historyEnabled=!historyEnabled;
-  db.collection("settings").doc("history").set({enabled:historyEnabled});
-  openAdmin();
+function change(u,v){
+  if(currentUser!==u&&currentUser!=="ADMIN")return;
+  if(v===1){scores[u]++;if(historyEnabled)histories[u].push({v:scores[u],t:now()});}
+  if(v===-1&&scores[u]>0){scores[u]--;if(historyEnabled)histories[u].pop();}
+  save(u);
 }
 
-/* SCORE CHANGE */
-function changeScore(user,val){
-  if(currentUser!==user && currentUser!=="ADMIN")return;
-
-  if(val===1){
-    scores[user]++;
-    if(historyEnabled)
-      histories[user].push({v:scores[user],t:now()});
-  }
-
-  if(val===-1 && scores[user]>0){
-    scores[user]--;
-    if(historyEnabled) histories[user].pop();
-  }
-
-  save(user);
+function save(u){
+  db.collection("scores").doc(u).set({value:scores[u],history:histories[u]});
+  update(u);updateChart();
 }
 
-/* SAVE */
-function save(user){
-  db.collection("scores").doc(user).set({
-    value:scores[user],
-    history:histories[user]
-  });
-  updateUI(user);
-  updateChart();
-}
-
-/* ADMIN EDIT */
-function editHistory(user,i){
-  const newTime=prompt("Edit time:",histories[user][i].t);
-  if(!newTime)return;
-  histories[user][i].t=newTime;
-  save(user);
-}
-
-function deleteHistory(user,i){
-  histories[user].splice(i,1);
-  scores[user]=histories[user].length
-    ? histories[user][histories[user].length-1].v
-    : 0;
-  save(user);
-}
-
-/* UI */
-function updateUI(user){
-  document.getElementById(`score-${user}`).innerText=scores[user];
-  document.getElementById(`history-${user}`).innerHTML=
-    "<b>History</b><br>"+
-    histories[user].map((h,i)=>`
-    <div class="hist-item">
-      <span>• ${h.v} — ${h.t}</span>
+function update(u){
+  document.getElementById("score-"+u).innerText=scores[u];
+  document.getElementById("history-"+u).innerHTML=
+    histories[u].map((h,i)=>`
+    <div class="hist">
+      <span>${h.v} — ${h.t}</span>
       ${currentUser==="ADMIN"?`
-        <span>
-          <span class="edit" onclick="editHistory('${user}',${i})">✏</span>
-          <span class="del" onclick="deleteHistory('${user}',${i})">✖</span>
-        </span>`:""}
+      <span>
+        <span class="edit" onclick="edit('${u}',${i})">✏</span>
+        <span class="del" onclick="del('${u}',${i})">✖</span>
+      </span>`:""}
     </div>`).join("");
 }
 
+function edit(u,i){
+  const t=prompt("Edit time:",histories[u][i].t);
+  if(!t)return;histories[u][i].t=t;save(u);
+}
+function del(u,i){
+  histories[u].splice(i,1);
+  scores[u]=histories[u].length?histories[u].at(-1).v:0;
+  save(u);
+}
+function toggleHistory(){historyEnabled=!historyEnabled;openAdmin()}
+
 /* CHART */
-function drawChart(){
-  const ctx=document.getElementById("scoreChart").getContext("2d");
-  chart=new Chart(ctx,{
+function draw(){
+  const c=document.getElementById("scoreChart").getContext("2d");
+  chart=new Chart(c,{
     type:"bar",
     data:{
       labels:["ERON","LAWIN"],
-      datasets:[{
-        data:[scores.ERON,scores.LAWIN],
-        backgroundColor:["#198754","#dc3545"]
-      }]
+      datasets:[{data:[scores.ERON,scores.LAWIN],backgroundColor:["#22c55e","#ef4444"]}]
     },
     options:{plugins:{legend:{display:false}}}
   });
 }
-
 function updateChart(){
   chart.data.datasets[0].data=[scores.ERON,scores.LAWIN];
   chart.update();

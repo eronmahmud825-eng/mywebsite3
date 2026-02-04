@@ -2,147 +2,124 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Score Dashboard</title>
+<title>Modern Score Dashboard</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
 :root{
-  --bg:#0b1020;
-  --card:#131a33;
-  --glass:rgba(255,255,255,.08);
-  --blue:#4f7cff;
-  --green:#22c55e;
-  --red:#ef4444;
-  --text:#e5e7eb;
-  --muted:#9ca3af;
+  --glass:rgba(255,255,255,.15);
+  --blur:blur(15px);
+  --white:#fff;
+  --accent:#0d6efd;
+  --green:#20c997;
+  --red:#ff6b6b;
 }
-
-*{box-sizing:border-box;font-family:Inter,system-ui}
-
+*{box-sizing:border-box;font-family:"Segoe UI",sans-serif}
 body{
   margin:0;
   min-height:100vh;
-  background:
-    radial-gradient(circle at top,var(--blue),transparent 40%),
-    var(--bg);
+  background:linear-gradient(135deg,#0d6efd,#6610f2);
   display:flex;
-  align-items:center;
   justify-content:center;
-  color:var(--text);
+  align-items:center;
+  color:white;
 }
-
-/* LOGIN */
-.login{
-  width:92%;
-  max-width:420px;
-  background:var(--card);
-  border-radius:22px;
-  padding:28px;
-  box-shadow:0 30px 80px rgba(0,0,0,.6);
+#app{
+  width:95%;
+  max-width:430px;
 }
-
-.login h2{
-  margin-bottom:20px;
-  text-align:center;
+.glass{
+  background:var(--glass);
+  backdrop-filter:var(--blur);
+  border-radius:20px;
+  padding:20px;
+  box-shadow:0 15px 40px rgba(0,0,0,.25);
+  animation:fade .5s ease;
 }
-
+@keyframes fade{
+  from{opacity:0;transform:translateY(15px)}
+  to{opacity:1}
+}
 button{
   width:100%;
   padding:14px;
-  margin-top:12px;
   border:none;
-  border-radius:14px;
-  font-size:15px;
-  background:var(--blue);
+  border-radius:12px;
+  background:var(--accent);
   color:white;
+  font-size:16px;
+  margin-top:12px;
   cursor:pointer;
-  transition:.25s;
 }
-
-button:hover{transform:translateY(-2px);opacity:.9}
-.back{background:#374151}
-.toggle{background:#111827}
-
-/* DASHBOARD */
-.dashboard{
-  width:100%;
-  max-width:520px;
-  padding:16px;
-}
-
-.dashboard h2{
-  text-align:center;
-  margin-bottom:10px;
-}
+.back{background:#6c757d}
+.toggle{background:#212529}
 
 .card{
-  background:var(--card);
-  border-radius:20px;
+  background:rgba(255,255,255,.9);
+  color:#000;
+  border-radius:18px;
   padding:18px;
-  margin-bottom:16px;
-  box-shadow:0 20px 50px rgba(0,0,0,.5);
-}
-
-/* SCORE CARD */
-.user{
+  margin-top:15px;
   text-align:center;
 }
-
 .score{
-  font-size:60px;
-  font-weight:800;
-  margin:6px 0;
+  font-size:50px;
+  font-weight:bold;
+  transition:.3s;
 }
-
-.controls{
-  display:flex;
-  justify-content:center;
-  gap:20px;
-}
-
 .controls button{
-  width:64px;
-  height:64px;
-  font-size:30px;
+  width:60px;
+  height:60px;
   border-radius:50%;
+  font-size:26px;
+  margin:6px;
 }
-
 .plus{background:var(--green)}
 .minus{background:var(--red)}
 
-/* HISTORY */
 .history{
-  margin-top:12px;
-  max-height:160px;
-  overflow:auto;
+  text-align:left;
   font-size:14px;
+  max-height:150px;
+  overflow:auto;
+  margin-top:10px;
 }
-
 .hist{
   display:flex;
   justify-content:space-between;
-  padding:6px 0;
-  border-bottom:1px solid rgba(255,255,255,.06);
 }
+.edit{color:#0d6efd;cursor:pointer}
+.del{color:red;cursor:pointer}
 
-.edit{color:#60a5fa;cursor:pointer;margin-right:8px}
-.del{color:#f87171;cursor:pointer}
-
-/* CHART */
-canvas{margin-top:10px}
+.toast{
+  position:fixed;
+  bottom:20px;
+  left:50%;
+  transform:translateX(-50%);
+  background:#000;
+  color:white;
+  padding:12px 20px;
+  border-radius:20px;
+  opacity:0;
+  pointer-events:none;
+  transition:.4s;
+}
+.toast.show{opacity:1;bottom:35px}
 </style>
 </head>
 
 <body>
 
-<div class="login" id="app">
-  <h2>Select Mode</h2>
-  <button onclick="selectUser('ERON')">ERON</button>
-  <button onclick="selectUser('LAWIN')">LAWIN</button>
-  <button onclick="openGuest()">👀 Guest</button>
+<div id="app" class="glass">
+  <h2 style="text-align:center">Select Mode</h2>
+  <button onclick="login('ERON')">ERON</button>
+  <button onclick="login('LAWIN')">LAWIN</button>
+  <button onclick="guest()">👀 Guest View</button>
 </div>
+
+<div class="toast" id="toast"></div>
 
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
@@ -155,61 +132,60 @@ firebase.initializeApp({
 });
 const db=firebase.firestore();
 
-const passwords={ERON:"0022",LAWIN:"0023"};
-const ADMIN_PASSWORD="9999";
-
-let currentUser="";
+const PASS={ERON:"0022",LAWIN:"0023"};
+const ADMIN="9999";
+let role="";
 let scores={ERON:0,LAWIN:0};
-let histories={ERON:[],LAWIN:[]};
-let historyEnabled=true;
+let history={ERON:[],LAWIN:[]};
 let chart;
 
-function now(){return new Date().toLocaleString();}
+/* UTIL */
+function toast(msg){
+  const t=document.getElementById("toast");
+  t.innerText=msg;
+  t.classList.add("show");
+  setTimeout(()=>t.classList.remove("show"),2000);
+}
+function now(){
+  return new Date().toLocaleString();
+}
 
 /* LOGIN */
-function selectUser(user){
+function login(u){
   const p=prompt("Password:");
-  if(p===ADMIN_PASSWORD){openAdmin();return;}
-  if(p!==passwords[user]){alert("Wrong password");return;}
-  openDash(user);
+  if(p===ADMIN){role="ADMIN";dashboard("ADMIN");return;}
+  if(p!==PASS[u])return alert("Wrong");
+  role=u;
+  dashboard(u);
 }
-function openGuest(){currentUser="GUEST";render("Guest View",false)}
-function openDash(u){currentUser=u;render(u+" Dashboard",false)}
-function openAdmin(){currentUser="ADMIN";render("Admin Dashboard",true)}
+function guest(){
+  role="GUEST";
+  dashboard("GUEST VIEW");
+}
 
-/* RENDER */
-function render(title,isAdmin){
-  document.getElementById("app").outerHTML=`
-  <div class="dashboard">
-    <h2>${title}</h2>
-
-    <div class="card">
-      ${isAdmin?`<button class="toggle" onclick="toggleHistory()">History ${historyEnabled?"ON":"OFF"}</button>`:""}
-      <canvas id="scoreChart" height="120"></canvas>
-    </div>
-
-    ${userCard("ERON")}
-    ${userCard("LAWIN")}
-
-    <button class="back" onclick="location.reload()">⬅ Back</button>
-  </div>`;
+/* DASHBOARD */
+function dashboard(title){
+  document.getElementById("app").innerHTML=`
+  <h2 style="text-align:center">${title}</h2>
+  <canvas id="chart" height="120"></canvas>
+  ${card("ERON")}
+  ${card("LAWIN")}
+  <button class="back" onclick="location.reload()">⬅ Back</button>`;
   load();
 }
 
-/* CARDS */
-function userCard(u){
+/* CARD */
+function card(u){
   return`
-  <div class="card user">
+  <div class="card">
     <h3>${u}</h3>
-    <div class="score" id="score-${u}">0</div>
-
-    ${(currentUser===u||currentUser==="ADMIN")?`
+    <div class="score" id="s-${u}">0</div>
+    ${(role===u||role==="ADMIN")?`
     <div class="controls">
       <button class="plus" onclick="change('${u}',1)">+</button>
       <button class="minus" onclick="change('${u}',-1)">-</button>
     </div>`:""}
-
-    <div class="history" id="history-${u}"></div>
+    <div class="history" id="h-${u}"></div>
   </div>`;
 }
 
@@ -219,59 +195,69 @@ function load(){
     db.collection("scores").doc(u).get().then(d=>{
       if(d.exists){
         scores[u]=d.data().value||0;
-        histories[u]=d.data().history||[];
-      }else db.collection("scores").doc(u).set({value:0,history:[]});
+        history[u]=d.data().history||[];
+      }
       update(u);
     });
   });
   setTimeout(draw,300);
 }
-
-function change(u,v){
-  if(currentUser!==u&&currentUser!=="ADMIN")return;
-  if(v===1){scores[u]++;if(historyEnabled)histories[u].push({v:scores[u],t:now()});}
-  if(v===-1&&scores[u]>0){scores[u]--;if(historyEnabled)histories[u].pop();}
-  save(u);
-}
-
 function save(u){
-  db.collection("scores").doc(u).set({value:scores[u],history:histories[u]});
-  update(u);updateChart();
+  db.collection("scores").doc(u).set({
+    value:scores[u],
+    history:history[u]
+  });
 }
 
+/* SCORE */
+function change(u,v){
+  scores[u]+=v;
+  if(scores[u]<0)scores[u]=0;
+  history[u].push({v:scores[u],t:now()});
+  save(u);
+  update(u);
+  updateChart();
+  toast((v>0?"+":"-")+"1 for "+u);
+}
+
+/* UI */
 function update(u){
-  document.getElementById("score-"+u).innerText=scores[u];
-  document.getElementById("history-"+u).innerHTML=
-    histories[u].map((h,i)=>`
+  document.getElementById("s-"+u).innerText=scores[u];
+  document.getElementById("h-"+u).innerHTML=
+    history[u].map((x,i)=>`
     <div class="hist">
-      <span>${h.v} — ${h.t}</span>
-      ${currentUser==="ADMIN"?`
+      <span>${x.v} — ${x.t}</span>
+      ${role==="ADMIN"?`
       <span>
         <span class="edit" onclick="edit('${u}',${i})">✏</span>
         <span class="del" onclick="del('${u}',${i})">✖</span>
       </span>`:""}
     </div>`).join("");
 }
-
 function edit(u,i){
-  const t=prompt("Edit time:",histories[u][i].t);
-  if(!t)return;histories[u][i].t=t;save(u);
+  const t=prompt("Edit time",history[u][i].t);
+  if(!t)return;
+  history[u][i].t=t;
+  save(u);update(u);
 }
 function del(u,i){
-  histories[u].splice(i,1);
-  scores[u]=histories[u].length?histories[u].at(-1).v:0;
-  save(u);
+  history[u].splice(i,1);
+  scores[u]=history[u].length?history[u][history[u].length-1].v:0;
+  save(u);update(u);updateChart();
+  toast("Deleted");
 }
-function toggleHistory(){historyEnabled=!historyEnabled;openAdmin()}
 
 /* CHART */
 function draw(){
-  const c=document.getElementById("scoreChart").getContext("2d");
-  chart=new Chart(c,{
+  const ctx=document.getElementById("chart");
+  chart=new Chart(ctx,{
     type:"bar",
     data:{
       labels:["ERON","LAWIN"],
-      datasets:[{data:[scores.ERON,scores.LAWIN],backgroundColor:["#22c55e","#ef4444"]}]
+      datasets:[{
+        data:[scores.ERON,scores.LAWIN],
+        backgroundColor:["#20c997","#ff6b6b"]
+      }]
     },
     options:{plugins:{legend:{display:false}}}
   });
@@ -284,7 +270,3 @@ function updateChart(){
 
 </body>
 </html>
-
-
-
-

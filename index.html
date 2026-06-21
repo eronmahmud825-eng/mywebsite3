@@ -4,288 +4,640 @@
 <meta charset="UTF-8">
 <title>Score Dashboard</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
-:root{
-  --bg:#0b1020;
-  --card:#131a33;
-  --glass:rgba(255,255,255,.08);
-  --blue:#4f7cff;
-  --green:#22c55e;
-  --red:#ef4444;
-  --text:#e5e7eb;
-  --muted:#9ca3af;
+:root {
+  --bg: #070d1a;
+  --surface: #0e1628;
+  --surface2: #141e35;
+  --border: rgba(255,255,255,0.07);
+  --border2: rgba(255,255,255,0.14);
+  --blue: #4d7cfe;
+  --blue-dim: rgba(77,124,254,0.12);
+  --green: #10b981;
+  --green-dim: rgba(16,185,129,0.12);
+  --red: #ef4444;
+  --red-dim: rgba(239,68,68,0.12);
+  --amber: #f59e0b;
+  --text: #f1f5f9;
+  --muted: #64748b;
+  --muted2: #94a3b8;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  background: var(--bg);
+  min-height: 100vh;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
 }
 
-*{box-sizing:border-box;font-family:Inter,system-ui}
+.screen { display: none; width: 100%; }
+.screen.active { display: flex; }
 
-body{
-  margin:0;
-  min-height:100vh;
-  background:
-    radial-gradient(circle at top,var(--blue),transparent 40%),
-    var(--bg);
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  color:var(--text);
+/* ── SELECT SCREEN ── */
+#selectScreen {
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+}
+.select-wrap {
+  width: 100%;
+  max-width: 380px;
+}
+.select-logo {
+  text-align: center;
+  margin-bottom: 40px;
+}
+.logo-mark {
+  width: 60px;
+  height: 60px;
+  background: linear-gradient(135deg, var(--blue), #7c3aed);
+  border-radius: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26px;
+  font-weight: 900;
+  color: white;
+  margin-bottom: 16px;
+}
+.select-logo h1 {
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.8px;
+}
+.select-logo p {
+  font-size: 14px;
+  color: var(--muted2);
+  margin-top: 6px;
+}
+.select-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--muted);
+  text-align: center;
+  margin-bottom: 16px;
+}
+.player-btns {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.player-btn {
+  width: 100%;
+  padding: 18px 20px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: all 0.18s;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-family: inherit;
+  text-align: left;
+}
+.player-btn:hover { border-color: var(--border2); background: var(--surface2); transform: translateY(-2px); }
+.player-btn:active { transform: translateY(0); }
+.player-btn .p-avatar {
+  width: 46px;
+  height: 46px;
+  border-radius: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  font-weight: 800;
+  flex-shrink: 0;
+  letter-spacing: -0.5px;
+}
+.player-btn.eron .p-avatar { background: var(--green-dim); color: var(--green); }
+.player-btn.lawin .p-avatar { background: var(--red-dim); color: var(--red); }
+.player-btn.guest .p-avatar { background: rgba(100,116,139,0.12); color: var(--muted2); }
+.p-info { flex: 1; }
+.p-name {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.3px;
+}
+.p-sub {
+  font-size: 12px;
+  color: var(--muted2);
+  margin-top: 3px;
+  font-weight: 400;
+}
+.p-arrow {
+  font-size: 18px;
+  color: var(--muted);
 }
 
-/* LOGIN */
-.login{
-  width:92%;
-  max-width:420px;
-  background:var(--card);
-  border-radius:22px;
-  padding:28px;
-  box-shadow:0 30px 80px rgba(0,0,0,.6);
+/* ── DASHBOARD ── */
+#dashScreen {
+  flex-direction: column;
+  min-height: 100vh;
+  max-width: 520px;
+  margin: 0 auto;
+  width: 100%;
 }
-
-.login h2{
-  margin-bottom:20px;
-  text-align:center;
+.dash-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24px 0 20px;
 }
-
-button{
-  width:100%;
-  padding:14px;
-  margin-top:12px;
-  border:none;
-  border-radius:14px;
-  font-size:15px;
-  background:var(--blue);
-  color:white;
-  cursor:pointer;
-  transition:.25s;
+.dash-header .brand {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
 }
-
-button:hover{transform:translateY(-2px);opacity:.9}
-.back{background:#374151}
-.toggle{background:#111827}
-
-/* DASHBOARD */
-.dashboard{
-  width:100%;
-  max-width:520px;
-  padding:16px;
+.dash-header .brand span { color: var(--blue); }
+.header-right { display: flex; align-items: center; gap: 10px; }
+.badge-mode {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 20px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
-
-.dashboard h2{
-  text-align:center;
-  margin-bottom:10px;
+.badge-guest { background: rgba(100,116,139,0.15); color: #94a3b8; border: 1px solid rgba(100,116,139,0.25); }
+.badge-eron { background: var(--green-dim); color: #6ee7b7; border: 1px solid rgba(16,185,129,0.25); }
+.badge-lawin { background: var(--red-dim); color: #fca5a5; border: 1px solid rgba(239,68,68,0.25); }
+.btn-back {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--muted2);
+  border-radius: 10px;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: inherit;
+  touch-action: manipulation;
+  transition: all 0.2s;
 }
+.btn-back:hover { border-color: var(--border2); color: var(--text); }
 
-.card{
-  background:var(--card);
-  border-radius:20px;
-  padding:18px;
-  margin-bottom:16px;
-  box-shadow:0 20px 50px rgba(0,0,0,.5);
+/* ── CHART CARD ── */
+.chart-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 20px 20px 16px;
+  margin-bottom: 16px;
 }
-
-/* SCORE CARD */
-.user{
-  text-align:center;
+.chart-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--muted2);
+  margin-bottom: 16px;
 }
-
-.score{
-  font-size:60px;
-  font-weight:800;
-  margin:6px 0;
+.bar-chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 16px;
+  height: 100px;
 }
-
-.controls{
-  display:flex;
-  justify-content:center;
-  gap:20px;
+.bar-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+  justify-content: flex-end;
+  gap: 6px;
 }
-
-.controls button{
-  width:64px;
-  height:64px;
-  font-size:30px;
-  border-radius:50%;
+.bar-val { font-size: 12px; font-weight: 600; color: var(--muted2); }
+.bar-fill {
+  width: 100%;
+  border-radius: 8px 8px 0 0;
+  min-height: 4px;
+  transition: height 0.5s cubic-bezier(0.34,1.56,0.64,1);
 }
+.bar-fill.eron { background: linear-gradient(180deg, #10b981, #059669); }
+.bar-fill.lawin { background: linear-gradient(180deg, #ef4444, #dc2626); }
+.bar-name { font-size: 12px; font-weight: 600; color: var(--muted2); letter-spacing: 0.3px; }
 
-.plus{background:var(--green)}
-.minus{background:var(--red)}
-
-/* HISTORY */
-.history{
-  margin-top:12px;
-  max-height:160px;
-  overflow:auto;
-  font-size:14px;
+/* ── SCORE CARDS ── */
+.score-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 20px;
+  margin-bottom: 14px;
 }
-
-.hist{
-  display:flex;
-  justify-content:space-between;
-  padding:6px 0;
-  border-bottom:1px solid rgba(255,255,255,.06);
+.card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0;
 }
+.user-info { display: flex; align-items: center; gap: 12px; }
+.avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 800;
+  flex-shrink: 0;
+  letter-spacing: -0.5px;
+}
+.avatar.eron { background: var(--green-dim); color: var(--green); }
+.avatar.lawin { background: var(--red-dim); color: var(--red); }
+.user-name-tag { font-size: 16px; font-weight: 700; letter-spacing: -0.3px; }
+.score-status { font-size: 12px; color: var(--muted2); margin-top: 2px; font-weight: 400; }
+.score-display { text-align: right; }
+.score-big {
+  font-size: 52px;
+  font-weight: 900;
+  letter-spacing: -2px;
+  line-height: 1;
+}
+.score-big.eron { color: var(--green); }
+.score-big.lawin { color: var(--red); }
+.score-sub { font-size: 11px; color: var(--muted); font-weight: 500; margin-top: 2px; }
 
-.edit{color:#60a5fa;cursor:pointer;margin-right:8px}
-.del{color:#f87171;cursor:pointer}
+/* Controls — always shown for the card owner */
+.card-controls {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+.ctrl-btn {
+  flex: 1;
+  padding: 14px;
+  border: none;
+  border-radius: 12px;
+  font-size: 18px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.ctrl-btn:active { transform: scale(0.95); }
+.ctrl-label { font-size: 13px; font-weight: 600; }
+.ctrl-plus { background: var(--green-dim); color: var(--green); border: 1px solid rgba(16,185,129,0.2); }
+.ctrl-plus:hover { background: rgba(16,185,129,0.22); }
+.ctrl-minus { background: var(--red-dim); color: var(--red); border: 1px solid rgba(239,68,68,0.2); }
+.ctrl-minus:hover { background: rgba(239,68,68,0.22); }
 
-/* CHART */
-canvas{margin-top:10px}
+/* ── HISTORY ── */
+.history-toggle {
+  width: 100%;
+  background: none;
+  border: none;
+  color: var(--muted2);
+  font-size: 12px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 14px;
+  padding: 0;
+  touch-action: manipulation;
+}
+.history-toggle:hover { color: var(--text); }
+.history-toggle .arrow { transition: transform 0.2s; display: inline-block; }
+.history-list {
+  margin-top: 12px;
+  max-height: 180px;
+  overflow-y: auto;
+  display: none;
+}
+.history-list.open { display: block; }
+.hist-row {
+  display: flex;
+  align-items: center;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+}
+.hist-row:last-child { border-bottom: none; }
+.hist-score { font-weight: 700; width: 28px; }
+.hist-time { color: var(--muted2); flex: 1; margin-left: 10px; }
+.hist-actions { display: flex; gap: 12px; }
+.hist-edit { color: #60a5fa; cursor: pointer; font-size: 12px; }
+.hist-del { color: #f87171; cursor: pointer; font-size: 12px; }
+.hist-edit:hover, .hist-del:hover { text-decoration: underline; }
+
+/* ── FOOTER ── */
+.dash-footer { padding: 8px 0 28px; text-align: center; }
+
+/* ── TOAST ── */
+.toast {
+  position: fixed;
+  bottom: 28px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: #1e293b;
+  border: 1px solid var(--border2);
+  color: var(--text);
+  padding: 10px 22px;
+  border-radius: 30px;
+  font-size: 13px;
+  font-weight: 500;
+  opacity: 0;
+  transition: all 0.3s;
+  pointer-events: none;
+  white-space: nowrap;
+  z-index: 999;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
 </style>
 </head>
-
 <body>
 
-<div class="login" id="app">
-  <h2>Select Mode</h2>
-  <button onclick="selectUser('ERON')">ERON</button>
-  <button onclick="selectUser('LAWIN')">LAWIN</button>
-  <button onclick="openGuest()">👀 Guest</button>
+<!-- SELECT WHO YOU ARE -->
+<div id="selectScreen" class="screen active">
+  <div class="select-wrap">
+    <div class="select-logo">
+      <div class="logo-mark">S</div>
+      <h1>Score Board</h1>
+      <p>Tap your name to continue</p>
+    </div>
+    <p class="select-label">Who are you?</p>
+    <div class="player-btns">
+      <button class="player-btn eron" onclick="enter('ERON')">
+        <div class="p-avatar">ER</div>
+        <div class="p-info">
+          <div class="p-name">ERON</div>
+          <div class="p-sub">Tap to manage your score</div>
+        </div>
+        <span class="p-arrow">→</span>
+      </button>
+      <button class="player-btn lawin" onclick="enter('LAWIN')">
+        <div class="p-avatar">LA</div>
+        <div class="p-info">
+          <div class="p-name">LAWIN</div>
+          <div class="p-sub">Tap to manage your score</div>
+        </div>
+        <span class="p-arrow">→</span>
+      </button>
+      <button class="player-btn guest" onclick="enter('GUEST')">
+        <div class="p-avatar">👀</div>
+        <div class="p-info">
+          <div class="p-name">Guest</div>
+          <div class="p-sub">View only — no editing</div>
+        </div>
+        <span class="p-arrow">→</span>
+      </button>
+    </div>
+  </div>
 </div>
 
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
-
-<script>
-firebase.initializeApp({
-  apiKey:"AIzaSyCfVDdwgkMkhdd-1TIQJbd3M_UWvNZQw8k",
-  authDomain:"score-dashboard-304f0.firebaseapp.com",
-  projectId:"score-dashboard-304f0"
-});
-const db=firebase.firestore();
-
-const passwords={ERON:"0022",LAWIN:"0023"};
-const ADMIN_PASSWORD="9999";
-
-let currentUser="";
-let scores={ERON:0,LAWIN:0};
-let histories={ERON:[],LAWIN:[]};
-let historyEnabled=true;
-let chart;
-
-function now(){return new Date().toLocaleString();}
-
-/* LOGIN */
-function selectUser(user){
-  const p=prompt("Password:");
-  if(p===ADMIN_PASSWORD){openAdmin();return;}
-  if(p!==passwords[user]){alert("Wrong password");return;}
-  openDash(user);
-}
-function openGuest(){currentUser="GUEST";render("Guest View",false)}
-function openDash(u){currentUser=u;render(u+" Dashboard",false)}
-function openAdmin(){currentUser="ADMIN";render("Admin Dashboard",true)}
-
-/* RENDER */
-function render(title,isAdmin){
-  document.getElementById("app").outerHTML=`
-  <div class="dashboard">
-    <h2>${title}</h2>
-
-    <div class="card">
-      ${isAdmin?`<button class="toggle" onclick="toggleHistory()">History ${historyEnabled?"ON":"OFF"}</button>`:""}
-      <canvas id="scoreChart" height="120"></canvas>
+<!-- DASHBOARD -->
+<div id="dashScreen" class="screen">
+  <div class="dash-header">
+    <div class="brand">Score<span>.</span></div>
+    <div class="header-right">
+      <span class="badge-mode" id="modeBadge"></span>
+      <button class="btn-back" onclick="location.reload()">← Back</button>
     </div>
+  </div>
 
-    ${userCard("ERON")}
-    ${userCard("LAWIN")}
+  <div class="chart-card">
+    <div class="chart-label">Score comparison</div>
+    <div class="bar-chart">
+      <div class="bar-col">
+        <div class="bar-val" id="barValEron">0</div>
+        <div class="bar-fill eron" id="barEron" style="height:4px"></div>
+        <div class="bar-name">ERON</div>
+      </div>
+      <div class="bar-col">
+        <div class="bar-val" id="barValLawin">0</div>
+        <div class="bar-fill lawin" id="barLawin" style="height:4px"></div>
+        <div class="bar-name">LAWIN</div>
+      </div>
+    </div>
+  </div>
 
-    <button class="back" onclick="location.reload()">⬅ Back</button>
-  </div>`;
-  load();
+  <!-- ERON -->
+  <div class="score-card">
+    <div class="card-top">
+      <div class="user-info">
+        <div class="avatar eron">ER</div>
+        <div>
+          <div class="user-name-tag">ERON</div>
+          <div class="score-status" id="statusERON">Loading…</div>
+        </div>
+      </div>
+      <div class="score-display">
+        <div class="score-big eron" id="scoreERON">—</div>
+        <div class="score-sub">points</div>
+      </div>
+    </div>
+    <div class="card-controls" id="ctrlERON" style="display:none">
+      <button class="ctrl-btn ctrl-plus" id="plusERON">
+        <span>+</span><span class="ctrl-label">Add point</span>
+      </button>
+      <button class="ctrl-btn ctrl-minus" id="minusERON">
+        <span>−</span><span class="ctrl-label">Remove</span>
+      </button>
+    </div>
+    <button class="history-toggle" id="histTogERON">
+      <span class="arrow">▾</span> Show history
+    </button>
+    <div class="history-list" id="histListERON"></div>
+  </div>
+
+  <!-- LAWIN -->
+  <div class="score-card">
+    <div class="card-top">
+      <div class="user-info">
+        <div class="avatar lawin">LA</div>
+        <div>
+          <div class="user-name-tag">LAWIN</div>
+          <div class="score-status" id="statusLAWIN">Loading…</div>
+        </div>
+      </div>
+      <div class="score-display">
+        <div class="score-big lawin" id="scoreLAWIN">—</div>
+        <div class="score-sub">points</div>
+      </div>
+    </div>
+    <div class="card-controls" id="ctrlLAWIN" style="display:none">
+      <button class="ctrl-btn ctrl-plus" id="plusLAWIN">
+        <span>+</span><span class="ctrl-label">Add point</span>
+      </button>
+      <button class="ctrl-btn ctrl-minus" id="minusLAWIN">
+        <span>−</span><span class="ctrl-label">Remove</span>
+      </button>
+    </div>
+    <button class="history-toggle" id="histTogLAWIN">
+      <span class="arrow">▾</span> Show history
+    </button>
+    <div class="history-list" id="histListLAWIN"></div>
+  </div>
+
+  <div class="dash-footer">
+    <span style="font-size:12px;color:var(--muted)">Live sync via Firebase</span>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+import {
+  getFirestore, doc, getDoc, setDoc, onSnapshot
+} from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+
+const app = initializeApp({
+  apiKey: "AIzaSyCfVDdwgkMkhdd-1TIQJbd3M_UWvNZQw8k",
+  authDomain: "score-dashboard-304f0.firebaseapp.com",
+  projectId: "score-dashboard-304f0"
+});
+const db = getFirestore(app);
+
+let currentUser = "";
+let busy = false;
+let scores = { ERON: 0, LAWIN: 0 };
+let histories = { ERON: [], LAWIN: [] };
+
+function now() {
+  return new Date().toLocaleString('en-GB', {
+    day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit'
+  });
+}
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2000);
 }
 
-/* CARDS */
-function userCard(u){
-  return`
-  <div class="card user">
-    <h3>${u}</h3>
-    <div class="score" id="score-${u}">0</div>
+// Exposed globally so HTML onclick can call it
+window.enter = function(user) {
+  currentUser = user;
 
-    ${(currentUser===u||currentUser==="ADMIN")?`
-    <div class="controls">
-      <button class="plus" onclick="change('${u}',1)">+</button>
-      <button class="minus" onclick="change('${u}',-1)">-</button>
-    </div>`:""}
+  // Switch screens
+  document.getElementById('selectScreen').classList.remove('active');
+  const dash = document.getElementById('dashScreen');
+  dash.classList.add('active');
+  dash.style.display = 'flex';
 
-    <div class="history" id="history-${u}"></div>
-  </div>`;
-}
+  // Badge
+  const badge = document.getElementById('modeBadge');
+  if (user === 'ERON') { badge.textContent = 'ERON'; badge.className = 'badge-mode badge-eron'; }
+  else if (user === 'LAWIN') { badge.textContent = 'LAWIN'; badge.className = 'badge-mode badge-lawin'; }
+  else { badge.textContent = 'Guest'; badge.className = 'badge-mode badge-guest'; }
 
-/* DATA */
-function load(){
-  ["ERON","LAWIN"].forEach(u=>{
-    db.collection("scores").doc(u).get().then(d=>{
-      if(d.exists){
-        scores[u]=d.data().value||0;
-        histories[u]=d.data().history||[];
-      }else db.collection("scores").doc(u).set({value:0,history:[]});
-      update(u);
+  // Show controls only for the logged-in player
+  if (user === 'ERON') document.getElementById('ctrlERON').style.display = 'flex';
+  if (user === 'LAWIN') document.getElementById('ctrlLAWIN').style.display = 'flex';
+
+  // Button events
+  document.getElementById('plusERON').addEventListener('click', () => change('ERON', 1));
+  document.getElementById('minusERON').addEventListener('click', () => change('ERON', -1));
+  document.getElementById('plusLAWIN').addEventListener('click', () => change('LAWIN', 1));
+  document.getElementById('minusLAWIN').addEventListener('click', () => change('LAWIN', -1));
+
+  // History toggles
+  ['ERON', 'LAWIN'].forEach(u => {
+    const btn = document.getElementById('histTog' + u);
+    btn.addEventListener('click', () => {
+      const list = document.getElementById('histList' + u);
+      const open = list.classList.toggle('open');
+      btn.querySelector('.arrow').textContent = open ? '▴' : '▾';
+      btn.childNodes[1].textContent = (open ? ' Hide' : ' Show') + ' history';
     });
   });
-  setTimeout(draw,300);
-}
 
-function change(u,v){
-  if(currentUser!==u&&currentUser!=="ADMIN")return;
-  if(v===1){scores[u]++;if(historyEnabled)histories[u].push({v:scores[u],t:now()});}
-  if(v===-1&&scores[u]>0){scores[u]--;if(historyEnabled)histories[u].pop();}
-  save(u);
-}
-
-function save(u){
-  db.collection("scores").doc(u).set({value:scores[u],history:histories[u]});
-  update(u);updateChart();
-}
-
-function update(u){
-  document.getElementById("score-"+u).innerText=scores[u];
-  document.getElementById("history-"+u).innerHTML=
-    histories[u].map((h,i)=>`
-    <div class="hist">
-      <span>${h.v} — ${h.t}</span>
-      ${currentUser==="ADMIN"?`
-      <span>
-        <span class="edit" onclick="edit('${u}',${i})">✏</span>
-        <span class="del" onclick="del('${u}',${i})">✖</span>
-      </span>`:""}
-    </div>`).join("");
-}
-
-function edit(u,i){
-  const t=prompt("Edit time:",histories[u][i].t);
-  if(!t)return;histories[u][i].t=t;save(u);
-}
-function del(u,i){
-  histories[u].splice(i,1);
-  scores[u]=histories[u].length?histories[u].at(-1).v:0;
-  save(u);
-}
-function toggleHistory(){historyEnabled=!historyEnabled;openAdmin()}
-
-/* CHART */
-function draw(){
-  const c=document.getElementById("scoreChart").getContext("2d");
-  chart=new Chart(c,{
-    type:"bar",
-    data:{
-      labels:["ERON","LAWIN"],
-      datasets:[{data:[scores.ERON,scores.LAWIN],backgroundColor:["#22c55e","#ef4444"]}]
-    },
-    options:{plugins:{legend:{display:false}}}
+  // Real-time Firestore listeners
+  ['ERON', 'LAWIN'].forEach(u => {
+    onSnapshot(doc(db, 'scores', u), snap => {
+      if (snap.exists()) {
+        scores[u] = snap.data().value || 0;
+        histories[u] = snap.data().history || [];
+      } else {
+        setDoc(doc(db, 'scores', u), { value: 0, history: [] });
+        scores[u] = 0; histories[u] = [];
+      }
+      updateCard(u);
+      updateChart();
+    });
   });
+};
+
+async function change(user, val) {
+  if (busy) return;
+  busy = true;
+  try {
+    const ref = doc(db, 'scores', user);
+    const snap = await getDoc(ref);
+    let cur = snap.exists() ? (snap.data().value || 0) : 0;
+    let hist = snap.exists() ? (snap.data().history || []) : [];
+
+    if (val === 1) {
+      cur++;
+      hist.push({ v: cur, t: now() });
+    } else if (val === -1 && cur > 0) {
+      cur--;
+      if (hist.length) hist.pop();
+    }
+    await setDoc(ref, { value: cur, history: hist });
+    showToast(val === 1 ? `+1 — ${user} now has ${cur}` : `${user} now has ${cur}`);
+  } catch (e) {
+    showToast('Connection error — try again');
+  }
+  busy = false;
 }
-function updateChart(){
-  chart.data.datasets[0].data=[scores.ERON,scores.LAWIN];
-  chart.update();
+
+function updateCard(u) {
+  const s = scores[u];
+  document.getElementById('score' + u).textContent = s;
+  document.getElementById('status' + u).textContent =
+    s === 0 ? 'No points yet' : `${s} point${s !== 1 ? 's' : ''} total`;
+
+  const list = document.getElementById('histList' + u);
+  if (!list) return;
+  list.innerHTML = histories[u].length === 0
+    ? '<div style="font-size:13px;color:var(--muted);padding:10px 0">No history yet</div>'
+    : [...histories[u]].reverse().map((h, ri) => {
+        const i = histories[u].length - 1 - ri;
+        return `<div class="hist-row">
+          <span class="hist-score" style="color:${u==='ERON'?'var(--green)':'var(--red)'}">${h.v}</span>
+          <span class="hist-time">${h.t}</span>
+        </div>`;
+      }).join('');
+}
+
+function updateChart() {
+  const max = Math.max(scores.ERON, scores.LAWIN, 1);
+  const h = 88;
+  document.getElementById('barEron').style.height = Math.max(4, (scores.ERON / max) * h) + 'px';
+  document.getElementById('barLawin').style.height = Math.max(4, (scores.LAWIN / max) * h) + 'px';
+  document.getElementById('barValEron').textContent = scores.ERON;
+  document.getElementById('barValLawin').textContent = scores.LAWIN;
 }
 </script>
-
 </body>
 </html>
-
-
-</body>
-</html>
-
